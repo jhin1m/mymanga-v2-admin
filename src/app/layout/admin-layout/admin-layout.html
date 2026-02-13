@@ -1,0 +1,47 @@
+<layout-default [options]="layoutOptions">
+  <!-- Sidebar nav is auto-rendered by layout-default when [nav] input is not provided -->
+
+  <!-- Header: Brand + Hamburger (left side) -->
+  <layout-default-header-item direction="left">
+    <div class="header-brand">
+      <span class="brand-text">AdminCP</span>
+    </div>
+  </layout-default-header-item>
+
+  <layout-default-header-item direction="left">
+    <span
+      class="header-trigger"
+      (click)="toggleCollapsed()"
+      nz-icon
+      nzType="menu-fold"
+    ></span>
+  </layout-default-header-item>
+
+  <!-- Header: Language + User (right side) -->
+  <layout-default-header-item direction="right">
+    <span class="header-lang">VN</span>
+  </layout-default-header-item>
+
+  <layout-default-header-item direction="right">
+    <div
+      class="header-user"
+      nz-dropdown
+      [nzDropdownMenu]="userMenu"
+      nzPlacement="bottomRight"
+    >
+      <nz-avatar nzSize="small" nzText="A" style="background-color: #2563eb"></nz-avatar>
+      <span class="header-user-name">Admin</span>
+    </div>
+    <nz-dropdown-menu #userMenu="nzDropdownMenu">
+      <ul nz-menu>
+        <li nz-menu-item (click)="onLogout()">
+          <span nz-icon nzType="logout"></span>
+          Đăng xuất
+        </li>
+      </ul>
+    </nz-dropdown-menu>
+  </layout-default-header-item>
+
+  <!-- Page content -->
+  <router-outlet />
+</layout-default>

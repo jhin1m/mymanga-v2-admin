@@ -31,7 +31,12 @@
             ],
             "styles": [
               "src/styles.less"
-            ]
+            ],
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "node_modules/"
+              ]
+            }
           },
           "configurations": {
             "production": {

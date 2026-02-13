@@ -1,7 +1,18 @@
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h1>MyManga Admin Dashboard</h1>
-    <button nz-button nzType="default" (click)="onLogout()">Đăng xuất</button>
-  </div>
-  <p>Chào mừng! Nội dung dashboard sẽ sớm được cập nhật.</p>
+<div nz-row [nzGutter]="[24, 24]">
+  @for (stat of stats(); track stat.title) {
+    <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+      <nz-card class="stat-card" [nzBordered]="true">
+        <div class="stat-card-content">
+          <div class="stat-icon">
+            <span nz-icon [nzType]="stat.icon" nzTheme="outline"></span>
+          </div>
+          <nz-statistic
+            [nzValue]="stat.value"
+            [nzTitle]="stat.title"
+            [nzValueStyle]="{ 'font-size': '28px', 'font-weight': 'bold' }"
+          />
+        </div>
+      </nz-card>
+    </div>
+  }
 </div>

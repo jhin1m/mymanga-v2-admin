@@ -1,1 +1,15 @@
-@import 'ng-zorro-antd/ng-zorro-antd.less';
+// 1. Delon dark theme base (ng-zorro dark + delon dark)
+@import '@delon/theme/theme-dark.less';
+
+// 2. Custom overrides (only primary color)
+@import './styles/theme.less';
+
+// 3. Delon layout + component styles
+@import '@delon/theme/system/index.less';
+@import '@delon/theme/layout-default/style/index.less';
+@import '@delon/abc/index.less';
+
+// 4. NG-ZORRO core + components (NOT ng-zorro-antd.less which resets to light)
+@import 'ng-zorro-antd/style/core/index';
+@import 'ng-zorro-antd/style/patch.less';
+@import 'ng-zorro-antd/components.less';

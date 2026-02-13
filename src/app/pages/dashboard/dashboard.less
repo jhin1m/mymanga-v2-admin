@@ -1,10 +1,41 @@
-.dashboard-container {
+:host {
+  display: block;
   padding: 24px;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.page-header {
   margin-bottom: 24px;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+  }
+}
+
+.stat-card {
+  border-radius: 8px;
+
+  ::ng-deep .ant-card-body {
+    padding: 20px 24px;
+  }
+}
+
+.stat-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  font-size: 22px;
+  flex-shrink: 0;
 }
