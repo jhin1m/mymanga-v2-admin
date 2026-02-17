@@ -1,0 +1,113 @@
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Tìm kiếm Artist" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <div nz-col [nzXs]="24" [nzSm]="24" [nzMd]="24">
+        <nz-form-item>
+          <nz-form-label>Tên</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="name" placeholder="Nhập tên artist" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onCreateArtist()">
+        <nz-icon nzType="plus" />
+        Tạo mới
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Artists Table -->
+<nz-card class="table-card">
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="artist"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <nz-table
+    #artistTable
+    [nzData]="artists()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzShowPagination]="false"
+    [nzScroll]="{ x: '800px' }"
+    nzSize="middle"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="80px" nzAlign="center">ID</th>
+        <th nzWidth="200px">Tên</th>
+        <th nzWidth="200px">Slug</th>
+        <th nzWidth="150px">Người tạo</th>
+        <th nzWidth="150px">Ngày tạo</th>
+        <th nzWidth="120px" nzAlign="center" nzRight>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (artist of artistTable.data; track artist.id) {
+        <tr>
+          <td nzAlign="center">{{ artist.id }}</td>
+          <td>
+            <span class="artist-name">{{ artist.name }}</span>
+          </td>
+          <td class="text-muted">{{ artist.slug }}</td>
+          <td class="text-muted">{{ artist.user?.name ?? '—' }}</td>
+          <td class="text-muted">{{ artist.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td nzAlign="center" nzRight>
+            <div class="action-buttons">
+              <button
+                nz-button
+                nzSize="small"
+                (click)="onEditArtist(artist)"
+                title="Sửa"
+              >
+                <nz-icon nzType="edit" />
+              </button>
+              <button
+                nz-button
+                nzDanger
+                nzSize="small"
+                nz-popconfirm
+                [nzPopconfirmTitle]="'Xóa artist \'' + artist.name + '\'?'"
+                (nzOnConfirm)="onDeleteArtist(artist)"
+                title="Xóa"
+              >
+                <nz-icon nzType="delete" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  @if (artists().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</nz-card>

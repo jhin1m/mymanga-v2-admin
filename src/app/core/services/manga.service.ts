@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PaginatedResponse } from './members.service';
+import { PaginatedResponse } from '../models/api-types';
 
 // --- Interfaces mô tả shape data từ API ---
 

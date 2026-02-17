@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/members/members').then((m) => m.MembersComponent),
       },
       {
+        path: 'artists',
+        loadComponent: () => import('./pages/artists/artists').then((m) => m.ArtistsComponent),
+      },
+      {
         path: 'manga',
         children: [
           {
