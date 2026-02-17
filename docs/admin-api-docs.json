@@ -1,0 +1,2186 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "MyManga VN Admin API",
+        "description": "API documentation cho Admin panel của MyManga VN - quản lý manga, chapters, users và nội dung website.\n *\n * **Authentication Required:**\n * - Tất cả endpoints yêu cầu Sanctum bearer token\n * - Một số endpoints yêu cầu admin role\n * - Sử dụng button 'Authorize' để thêm token\n *\n * **Lưu ý:**\n * - Admin API sử dụng middleware `adminOnly` cho các thao tác quan trọng\n * - Một số endpoints sử dụng `adminOrOwner` cho phép users chỉnh sửa nội dung của họ\n * - File uploads sử dụng `multipart/form-data`\n * - Bulk operations hỗ trợ xử lý nhiều items cùng lúc",
+        "contact": {
+            "name": "MyManga VN Admin Team",
+            "email": "admin@mymanga.vn"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Local Development Server"
+        },
+        {
+            "url": "https://mymanga.vn",
+            "description": "Production Server"
+        }
+    ],
+    "paths": {
+        "/api/admin/auth": {
+            "get": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Get Admin Profile",
+                "description": "Lấy thông tin profile của admin user hiện tại (authenticated).\n     *\n     * **Yêu cầu:** Bearer token trong header Authorization",
+                "operationId": "getAdminProfile",
+                "responses": {
+                    "200": {
+                        "description": "Profile retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminProfileResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated - token không hợp lệ hoặc missing",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Admin Login",
+                "description": "Đăng nhập admin panel - returns bearer token để authenticate các requests tiếp theo.\n     *\n     * **Lưu ý:**\n     * - Chỉ users có role 'admin' hoặc 'translator' mới có thể đăng nhập\n     * - Token trả về cần được include trong header: `Authorization: Bearer {token}`\n     * - Token không có expiration time mặc định",
+                "operationId": "adminLogin",
+                "requestBody": {
+                    "description": "Login credentials",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminLoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful - bearer token returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminLoginResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials hoặc user không có admin role",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminLoginErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - email/password không đúng format",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Admin Auth"
+                ],
+                "summary": "Admin Logout",
+                "description": "Đăng xuất admin - xóa current access token.\n     *\n     * **Lưu ý:**\n     * - Chỉ xóa token hiện tại (token đang được dùng)\n     * - Các tokens khác (nếu có) vẫn còn valid\n     * - Response: HTTP 204 No Content",
+                "operationId": "adminLogout",
+                "responses": {
+                    "204": {
+                        "description": "Logout successful - no content returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminLogoutResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated - token không hợp lệ hoặc missing",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters": {
+            "get": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "List All Chapters",
+                "description": "Lấy danh sách chapters với pagination, filtering, sorting (QueryBuilder).\n     *\n     * **Public endpoint** - không yêu cầu authentication\n     *\n     * **QueryBuilder Features:**\n     * - **Filtering:** `filter[field]=value` - VD: `filter[manga_id]=xxx`\n     * - **Sorting:** `sort=field` hoặc `sort=-field` - VD: `sort=order`, `sort=-created_at`\n     * - **Includes:** `include=manga,user,images`\n     * - **Pagination:** `page=1&per_page=20`\n     *\n     * **Common Filters:**\n     * - `filter[manga_id]` - Filter by manga UUID\n     * - `filter[user_id]` - Filter by uploader",
+                "operationId": "listChapters",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "filter[manga_id]",
+                        "in": "query",
+                        "description": "Filter by manga ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort field",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "order"
+                        }
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Related data to include",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "manga,user,images"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chapter list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminChapterListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Create New Chapter",
+                "description": "Tạo chapter mới cho manga.\n     *\n     * **Lưu ý:**\n     * - User ID được set tự động từ authenticated user\n     * - Order number tự động increment nếu không provide\n     * - Slug được generate tự động từ name\n     * - Images có thể add sau bằng endpoint /add-img",
+                "operationId": "createChapter",
+                "requestBody": {
+                    "description": "Chapter data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminCreateChapterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Chapter created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminChapterResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters/{id}": {
+            "get": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Get Single Chapter",
+                "description": "Lấy chi tiết một chapter theo ID (UUID).\n     *\n     * **Public endpoint** - không yêu cầu authentication\n     *\n     * **Includes:** Supports `include` parameter - VD: `include=manga,user,images`",
+                "operationId": "getChapter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Chapter UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Related data to include",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "manga,user,images"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chapter retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminChapterResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chapter not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Update Chapter",
+                "description": "Cập nhật chapter (admin hoặc owner).\n     *\n     * **Authorization:**\n     * - Admin: có thể update bất kỳ chapter nào\n     * - Owner: chỉ có thể update chapter của mình (middleware: adminOrOwner:chapter)\n     *\n     * **Lưu ý:**\n     * - image_urls: array URLs để replace toàn bộ images (không merge)\n     * - Tất cả fields đều optional",
+                "operationId": "updateChapter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Chapter UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Fields to update (all optional)",
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminUpdateChapterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Chapter updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminChapterResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chapter not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Delete Chapter",
+                "description": "Xóa chapter (admin hoặc owner).\n     *\n     * **Authorization:**\n     * - Admin: có thể delete bất kỳ chapter nào\n     * - Owner: chỉ có thể delete chapter của mình (middleware: adminOrOwner:chapter)\n     *\n     * **Lưu ý:**\n     * - Cascade delete: tất cả images liên quan sẽ bị xóa\n     * - S3 cleanup tự động (model observer)\n     * - Action không thể undo",
+                "operationId": "deleteChapter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Chapter UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Chapter deleted successfully (no content)"
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chapter not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters-order": {
+            "post": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Bulk Update Chapter Order",
+                "description": "Cập nhật order (thứ tự) của nhiều chapters cùng lúc - hữu ích khi reorder chapters.\n     *\n     * **Admin Only** - requires admin role\n     *\n     * **Use Case:** Drag-and-drop reordering trong admin panel\n     *\n     * **Lưu ý:**\n     * - Mỗi order number phải unique (không duplicate)\n     * - Tất cả chapter IDs phải tồn tại\n     * - Minimum 1 item required",
+                "operationId": "updateChapterOrder",
+                "requestBody": {
+                    "description": "Array of chapter ID and order pairs",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminUpdateChaptersOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Chapter order updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminBulkOperationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin role required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - duplicate orders hoặc invalid IDs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters/{id}/add-img": {
+            "post": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Add Image to Chapter",
+                "description": "Upload single image và thêm vào chapter (append to existing images).\n     *\n     * **Authorization:**\n     * - Admin: có thể add image cho bất kỳ chapter nào\n     * - Owner: chỉ có thể add image cho chapter của mình (middleware: adminOrOwner:chapter)\n     *\n     * **Lưu ý:**\n     * - Image được upload lên S3\n     * - Max file size: 3MB\n     * - Allowed formats: jpg, png, webp\n     * - Images được add vào cuối list (max order + 1)",
+                "operationId": "addChapterImage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Chapter UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Image file to upload",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminAddChapterImageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Image added successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Image added successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "https://s3.amazonaws.com/bucket/chapters/image.jpg"
+                                                },
+                                                "image_order": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chapter not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - file too large hoặc invalid format",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters/delete-many": {
+            "delete": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Bulk Delete Chapters",
+                "description": "Xóa nhiều chapters cùng lúc - useful cho cleanup operations.\n     *\n     * **Admin Only** - requires admin role\n     *\n     * **Lưu ý:**\n     * - Cascade delete: tất cả images liên quan sẽ bị xóa\n     * - S3 cleanup tự động (model observer)\n     * - Action không thể undo\n     * - Minimum 1 ID required",
+                "operationId": "deleteMany",
+                "requestBody": {
+                    "description": "Array of chapter IDs to delete",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminDeleteManyChaptersRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Chapters deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminBulkOperationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin role required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - invalid IDs hoặc empty array",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/chapters/{id}/clr-img": {
+            "delete": {
+                "tags": [
+                    "Chapter Management"
+                ],
+                "summary": "Clear All Chapter Images",
+                "description": "Xóa tất cả images của chapter (không xóa chapter).\n     *\n     * **Authorization:**\n     * - Admin: có thể clear images cho bất kỳ chapter nào\n     * - Owner: chỉ có thể clear images cho chapter của mình (middleware: adminOrOwner:chapter)\n     *\n     * **Lưu ý:**\n     * - Xóa tất cả images từ database và S3\n     * - Chapter vẫn tồn tại (chỉ xóa images)\n     * - S3 cleanup tự động (model observer)\n     * - Action không thể undo",
+                "operationId": "clearChapterImages",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Chapter UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Images cleared successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "All images cleared successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Chapter not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/mangas": {
+            "get": {
+                "tags": [
+                    "Manga Management"
+                ],
+                "summary": "List All Mangas",
+                "description": "Lấy danh sách manga với pagination, filtering, sorting (sử dụng Spatie QueryBuilder).\n     *\n     * **QueryBuilder Features:**\n     * - **Filtering:** `filter[field]=value` - VD: `filter[status]=2`, `filter[is_hot]=1`\n     * - **Sorting:** `sort=field` hoặc `sort=-field` (descending) - VD: `sort=-created_at`\n     * - **Includes:** `include=relation` - VD: `include=user,genres,artist`\n     * - **Pagination:** `page=1&per_page=15`\n     *\n     * **Common Filters:**\n     * - `filter[status]` - 1=Completed, 2=InProgress\n     * - `filter[is_hot]` - 1=hot, 0=not hot\n     * - `filter[is_reviewed]` - 1=reviewed, 0=not reviewed\n     * - `filter[user_id]` - Filter by creator\n     *\n     * **Common Includes:**\n     * - `include=user,genres,artist,group,doujinshi,chapters`",
+                "operationId": "listMangas",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "filter[status]",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                1,
+                                2
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort field (prefix with - for descending)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "-created_at"
+                        }
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Related data to include",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "user,genres,artist"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Manga list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminMangaListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Manga Management"
+                ],
+                "summary": "Create New Manga",
+                "description": "Tạo manga mới với cover image upload.\n     *\n     * **Lưu ý:**\n     * - Cover upload: multipart/form-data (max 2MB, jpg/png/webp)\n     * - Genres: array of genre IDs để sync relationship\n     * - User ID được set tự động từ authenticated user\n     * - Slug được generate tự động từ name",
+                "operationId": "createManga",
+                "requestBody": {
+                    "description": "Manga data with optional cover upload",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminCreateMangaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Manga created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminMangaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/manga/{id}": {
+            "get": {
+                "tags": [
+                    "Manga Management"
+                ],
+                "summary": "Get Single Manga",
+                "description": "Lấy chi tiết một manga theo ID (UUID).\n     *\n     * **Includes:** Supports `include` parameter - VD: `include=user,genres,chapters`",
+                "operationId": "getManga",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Manga UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "include",
+                        "in": "query",
+                        "description": "Related data to include",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "user,genres,chapters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Manga retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminMangaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Manga not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Manga Management"
+                ],
+                "summary": "Update Manga",
+                "description": "Cập nhật manga (admin hoặc owner).\n     *\n     * **Authorization:**\n     * - Admin: có thể update bất kỳ manga nào\n     * - Owner: chỉ có thể update manga của mình (middleware: adminOrOwner:manga)\n     *\n     * **Lưu ý:**\n     * - Cover upload: sử dụng multipart/form-data nếu cần update cover\n     * - Genres: gửi array IDs mới để replace hoàn toàn (không merge)\n     * - Tất cả fields đều optional",
+                "operationId": "updateManga",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Manga UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Fields to update (all optional)",
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AdminUpdateMangaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Manga updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminMangaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Manga not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Manga Management"
+                ],
+                "summary": "Delete Manga",
+                "description": "Xóa manga (admin hoặc owner).\n     *\n     * **Authorization:**\n     * - Admin: có thể delete bất kỳ manga nào\n     * - Owner: chỉ có thể delete manga của mình (middleware: adminOrOwner:manga)\n     *\n     * **Lưu ý:**\n     * - Cascade delete: tất cả chapters và images liên quan sẽ bị xóa\n     * - S3 images sẽ được clean up tự động (model observer)\n     * - Action không thể undo",
+                "operationId": "deleteManga",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Manga UUID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Manga deleted successfully (no content)"
+                    },
+                    "403": {
+                        "description": "Forbidden - not admin or owner",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminForbiddenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Manga not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminNotFoundResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminUnauthorizedResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AdminLoginRequest": {
+                "title": "Login Request",
+                "description": "Request body cho admin login",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "description": "Email của admin account (must exist in database)",
+                        "type": "string",
+                        "format": "email",
+                        "example": "admin@mymanga.vn"
+                    },
+                    "password": {
+                        "description": "Password (minimum 8 characters)",
+                        "type": "string",
+                        "format": "password",
+                        "minLength": 8,
+                        "example": "admin123456"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminLoginResponse": {
+                "title": "Login Response",
+                "description": "Response sau khi login thành công - contains bearer token",
+                "properties": {
+                    "success": {
+                        "description": "Indicates successful authentication",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "Authentication data",
+                        "properties": {
+                            "token": {
+                                "description": "Sanctum bearer token (use for subsequent requests)",
+                                "type": "string",
+                                "example": "1|abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                            },
+                            "type": {
+                                "description": "Token type",
+                                "type": "string",
+                                "example": "Bearer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminLoginErrorResponse": {
+                "title": "Login Error Response",
+                "description": "Response khi login fails (wrong credentials)",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "User or password error"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminProfileResponse": {
+                "title": "Profile Response",
+                "description": "Response cho GET /auth - thông tin admin user hiện tại",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "User profile data",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "example": "123e4567-e89b-12d3-a456-426614174000"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Admin User"
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": "admin@mymanga.vn"
+                            },
+                            "email_verified_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "is_notification_on": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "score": {
+                                "type": "integer",
+                                "example": 1000
+                            },
+                            "pet_id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "nullable": true
+                            },
+                            "avatar": {
+                                "type": "string",
+                                "example": "avatars/admin.jpg",
+                                "nullable": true
+                            },
+                            "remember_token": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2024-01-15T10:30:00.000000Z"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2024-01-20T14:45:00.000000Z"
+                            },
+                            "roles": {
+                                "description": "User roles (admin, translator, etc.)",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "admin"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminLogoutResponse": {
+                "title": "Logout Response",
+                "description": "Response sau khi logout thành công (HTTP 204 No Content)",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "No data returned",
+                        "type": "null",
+                        "example": null
+                    }
+                },
+                "type": "object"
+            },
+            "AdminCreateChapterRequest": {
+                "title": "Create Chapter Request",
+                "description": "Request body cho creating chapter",
+                "required": [
+                    "name",
+                    "manga_id"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "Chapter name (required)",
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "Chapter 1: Khởi đầu"
+                    },
+                    "manga_id": {
+                        "description": "Manga ID (must exist in mangas table)",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "order": {
+                        "description": "Chapter order/number (optional, auto-incremented)",
+                        "type": "number",
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AdminUpdateChapterRequest": {
+                "title": "Update Chapter Request",
+                "description": "Request body cho updating chapter (all fields optional)",
+                "properties": {
+                    "name": {
+                        "description": "Chapter name",
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "Chapter 1: Khởi đầu (Updated)"
+                    },
+                    "manga_id": {
+                        "description": "Manga ID (move chapter to different manga)",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "user_id": {
+                        "description": "User ID (change owner)",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "order": {
+                        "description": "Chapter order/number",
+                        "type": "number",
+                        "example": 1.5
+                    },
+                    "image_urls": {
+                        "description": "Array of image URLs (replaces existing images)",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "example": [
+                            "https://cdn.example.com/image1.jpg",
+                            "https://cdn.example.com/image2.jpg"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AdminUpdateChaptersOrderRequest": {
+                "title": "Update Chapters Order Request",
+                "description": "Bulk update chapter order - thay đổi thứ tự nhiều chapters cùng lúc",
+                "required": [
+                    "chapters_order"
+                ],
+                "properties": {
+                    "chapters_order": {
+                        "description": "Array of chapter ID and order pairs (minimum 1 item)",
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id",
+                                "order"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "description": "Chapter ID (must exist)",
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                                },
+                                "order": {
+                                    "description": "New order number (must be unique)",
+                                    "type": "number",
+                                    "example": 1
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "example": [
+                            {
+                                "id": "123e4567-e89b-12d3-a456-426614174000",
+                                "order": 1
+                            },
+                            {
+                                "id": "223e4567-e89b-12d3-a456-426614174000",
+                                "order": 2
+                            },
+                            {
+                                "id": "323e4567-e89b-12d3-a456-426614174000",
+                                "order": 3
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AdminAddChapterImageRequest": {
+                "title": "Add Chapter Image Request",
+                "description": "Upload single image to chapter (multipart/form-data)",
+                "required": [
+                    "image"
+                ],
+                "properties": {
+                    "image": {
+                        "description": "Image file (jpg, png, webp - max 3MB)",
+                        "type": "string",
+                        "format": "binary"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminDeleteManyChaptersRequest": {
+                "title": "Delete Many Chapters Request",
+                "description": "Bulk delete chapters - xóa nhiều chapters cùng lúc",
+                "required": [
+                    "ids"
+                ],
+                "properties": {
+                    "ids": {
+                        "description": "Array of chapter IDs to delete (minimum 1 item)",
+                        "type": "array",
+                        "items": {
+                            "description": "Chapter ID (must exist in chapters table)",
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "example": [
+                            "123e4567-e89b-12d3-a456-426614174000",
+                            "223e4567-e89b-12d3-a456-426614174000"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AdminChapterResponse": {
+                "title": "Chapter Response",
+                "description": "Single chapter response (uses ChapterResource từ V1)",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "Chapter data",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Chapter 1: Khởi đầu"
+                            },
+                            "order": {
+                                "type": "number",
+                                "example": 1
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "chapter-1-khoi-dau"
+                            },
+                            "view_count": {
+                                "type": "integer",
+                                "example": 1500
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "manga": {
+                                "description": "Parent manga",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "slug": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "user": {
+                                "description": "Owner user",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "images": {
+                                "description": "Chapter images",
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "path": {
+                                            "type": "string",
+                                            "example": "https://s3.amazonaws.com/bucket/chapters/image1.jpg"
+                                        },
+                                        "order": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminChapterListResponse": {
+                "title": "Chapter List Response",
+                "description": "Paginated chapter list response",
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminChapterResponse"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminBulkOperationResponse": {
+                "title": "Bulk Operation Response",
+                "description": "Response cho bulk operations (update order, delete many)",
+                "properties": {
+                    "success": {
+                        "description": "Operation success status",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "description": "Success message",
+                        "type": "string",
+                        "example": "Bulk operation completed successfully"
+                    },
+                    "data": {
+                        "description": "Operation result data",
+                        "properties": {
+                            "affected_count": {
+                                "description": "Number of items affected",
+                                "type": "integer",
+                                "example": 5
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminSuccessResponse": {
+                "title": "Success Response",
+                "description": "Standard success response format",
+                "properties": {
+                    "success": {
+                        "description": "Indicates operation was successful",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "Response data (structure varies by endpoint)",
+                        "type": "object"
+                    },
+                    "message": {
+                        "description": "Success message",
+                        "type": "string",
+                        "example": "Operation completed successfully"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminErrorResponse": {
+                "title": "Error Response",
+                "description": "Standard error response format",
+                "properties": {
+                    "success": {
+                        "description": "Indicates operation failed",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "An error occurred"
+                    },
+                    "error": {
+                        "description": "Detailed error description",
+                        "type": "string",
+                        "example": "Internal server error"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminUnauthorizedResponse": {
+                "title": "Unauthorized Response",
+                "description": "Response khi không có authentication token hoặc token không hợp lệ",
+                "properties": {
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "Unauthenticated."
+                    }
+                },
+                "type": "object"
+            },
+            "AdminForbiddenResponse": {
+                "title": "Forbidden Response",
+                "description": "Response khi user không có quyền admin",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "Forbidden. Admin access required."
+                    }
+                },
+                "type": "object"
+            },
+            "AdminNotFoundResponse": {
+                "title": "Not Found Response",
+                "description": "Response khi resource không tồn tại",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "Resource not found"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminValidationErrorResponse": {
+                "title": "Validation Error Response",
+                "description": "Response khi validation fails",
+                "properties": {
+                    "message": {
+                        "description": "Main error message",
+                        "type": "string",
+                        "example": "The given data was invalid."
+                    },
+                    "errors": {
+                        "description": "Field-specific validation errors",
+                        "type": "object",
+                        "example": {
+                            "email": [
+                                "The email field is required."
+                            ],
+                            "password": [
+                                "The password must be at least 8 characters."
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AdminPaginationMeta": {
+                "title": "Pagination Metadata",
+                "description": "Metadata cho paginated responses (sử dụng với QueryBuilder)",
+                "properties": {
+                    "current_page": {
+                        "description": "Current page number",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "from": {
+                        "description": "First item number on current page",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "last_page": {
+                        "description": "Total number of pages",
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "per_page": {
+                        "description": "Items per page",
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "to": {
+                        "description": "Last item number on current page",
+                        "type": "integer",
+                        "example": 15
+                    },
+                    "total": {
+                        "description": "Total number of items",
+                        "type": "integer",
+                        "example": 150
+                    },
+                    "path": {
+                        "description": "Base URL for pagination",
+                        "type": "string",
+                        "example": "http://127.0.0.1:8000/api/admin/manga"
+                    },
+                    "first_page_url": {
+                        "type": "string",
+                        "example": "http://127.0.0.1:8000/api/admin/manga?page=1"
+                    },
+                    "last_page_url": {
+                        "type": "string",
+                        "example": "http://127.0.0.1:8000/api/admin/manga?page=10"
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "example": "http://127.0.0.1:8000/api/admin/manga?page=2",
+                        "nullable": true
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AdminPaginatedResponse": {
+                "title": "Paginated Response",
+                "description": "Standard paginated response format (combines data + meta)",
+                "properties": {
+                    "data": {
+                        "description": "Array of items",
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminCreateMangaRequest": {
+                "title": "Create Manga Request",
+                "description": "Request body cho creating manga (multipart/form-data cho cover upload)",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "Manga name (required)",
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "One Piece"
+                    },
+                    "name_alt": {
+                        "description": "Alternative name (Japanese, Korean, etc.)",
+                        "type": "string",
+                        "example": "ワンピース"
+                    },
+                    "pilot": {
+                        "description": "Manga summary/description",
+                        "type": "string",
+                        "example": "Tóm tắt nội dung manga..."
+                    },
+                    "status": {
+                        "description": "Manga status: 1=Completed, 2=InProgress",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2
+                        ],
+                        "example": 2
+                    },
+                    "artist_id": {
+                        "description": "Artist ID (must exist in artists table)",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "group_id": {
+                        "description": "Group ID (translation group)",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "doujinshi_id": {
+                        "description": "Doujinshi ID (nếu là doujinshi)",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "finished_by": {
+                        "description": "Group/person finished translating",
+                        "type": "string",
+                        "example": "Group XYZ"
+                    },
+                    "cover": {
+                        "description": "Cover image file (jpg, png, webp - max 2MB)",
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "genres": {
+                        "description": "Array of genre IDs to associate with manga",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1,
+                            3,
+                            5
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AdminUpdateMangaRequest": {
+                "title": "Update Manga Request",
+                "description": "Request body cho updating manga (tất cả fields optional)",
+                "properties": {
+                    "name": {
+                        "description": "Manga name",
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "One Piece"
+                    },
+                    "name_alt": {
+                        "description": "Alternative name",
+                        "type": "string",
+                        "example": "ワンピース"
+                    },
+                    "pilot": {
+                        "description": "Manga summary/description",
+                        "type": "string"
+                    },
+                    "status": {
+                        "description": "Manga status: 1=Completed, 2=InProgress",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2
+                        ]
+                    },
+                    "user_id": {
+                        "description": "User ID (owner của manga)",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "artist_id": {
+                        "description": "Artist ID",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "group_id": {
+                        "description": "Group ID",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "doujinshi_id": {
+                        "description": "Doujinshi ID",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "finished_by": {
+                        "description": "Group/person finished translating",
+                        "type": "string"
+                    },
+                    "is_reviewed": {
+                        "description": "Đã được review bởi admin",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_hot": {
+                        "description": "Manga hot/trending",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "cover": {
+                        "description": "Cover image file (jpg, png, webp - max 2MB)",
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "genres": {
+                        "description": "Array of genre IDs (replaces existing genres)",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AdminMangaResponse": {
+                "title": "Manga Response",
+                "description": "Single manga response (uses MangaResource từ V1)",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "description": "Manga data",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "One Piece"
+                            },
+                            "name_alt": {
+                                "type": "string",
+                                "example": "ワンピース"
+                            },
+                            "pilot": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "one-piece"
+                            },
+                            "is_reviewed": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "is_hot": {
+                                "type": "boolean",
+                                "example": false
+                            },
+                            "cover": {
+                                "type": "string",
+                                "example": "https://s3.amazonaws.com/bucket/manga-covers/one-piece.jpg"
+                            },
+                            "finished_by": {
+                                "type": "string"
+                            },
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "user": {
+                                "description": "Owner user",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "artist": {
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "group": {
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "doujinshi": {
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "genres": {
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "slug": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "chapters": {
+                                "description": "Recent chapters",
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "order": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "AdminMangaListResponse": {
+                "title": "Manga List Response",
+                "description": "Paginated manga list response",
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AdminMangaResponse"
+                        }
+                    },
+                    "links": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/AdminPaginationMeta"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Admin Auth",
+            "description": "Authentication endpoints cho admin panel - login, profile, logout"
+        },
+        {
+            "name": "Manga Management",
+            "description": "Quản lý manga - CRUD operations, sync genres, upload cover"
+        },
+        {
+            "name": "Chapter Management",
+            "description": "Quản lý chapters - CRUD, bulk operations (order, delete-many), image management"
+        }
+    ]
+}
