@@ -55,8 +55,8 @@ export class StartupService {
             ],
           },
           {
-            text: 'Tác giả',
-            link: '/authors',
+            text: 'Artist',
+            link: '/artists',
             icon: { type: 'icon', value: 'team' },
           },
           {

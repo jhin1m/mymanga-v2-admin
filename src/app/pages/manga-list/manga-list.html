@@ -86,21 +86,15 @@
 <!-- Manga Grid -->
 <nz-card class="grid-card">
   <!-- Pagination phía trên -->
-  <div class="grid-toolbar">
-    <span class="total-text">
-      Tổng <strong>{{ total() }}</strong> truyện
-    </span>
-    <nz-pagination
-      [nzPageIndex]="pageIndex()"
-      [nzPageSize]="pageSize()"
-      [nzTotal]="total()"
-      [nzShowSizeChanger]="true"
-      [nzPageSizeOptions]="[10, 20, 50]"
-      nzSize="small"
-      (nzPageIndexChange)="onPageChange($event)"
-      (nzPageSizeChange)="onPageSizeChange($event)"
-    />
-  </div>
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="truyện"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
 
   <!-- Loading spinner -->
   <nz-spin [nzSpinning]="loading()">
@@ -158,17 +152,13 @@
 
   <!-- Pagination phía dưới -->
   @if (mangas().length > 0) {
-    <div class="grid-toolbar bottom">
-      <nz-pagination
-        [nzPageIndex]="pageIndex()"
-        [nzPageSize]="pageSize()"
-        [nzTotal]="total()"
-        [nzShowSizeChanger]="true"
-        [nzPageSizeOptions]="[10, 20, 50]"
-        nzSize="small"
-        (nzPageIndexChange)="onPageChange($event)"
-        (nzPageSizeChange)="onPageSizeChange($event)"
-      />
-    </div>
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
   }
 </nz-card>

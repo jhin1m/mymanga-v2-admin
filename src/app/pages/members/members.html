@@ -61,26 +61,26 @@
 
 <!-- Members Table -->
 <nz-card class="table-card">
+  <!-- Pagination phía trên -->
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="thành viên"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
   <nz-table
     #memberTable
     [nzData]="members()"
     [nzLoading]="loading()"
-    [nzTotal]="total()"
-    [nzPageIndex]="pageIndex()"
-    [nzPageSize]="pageSize()"
     [nzFrontPagination]="false"
-    [nzShowSizeChanger]="true"
-    [nzPageSizeOptions]="[10, 20, 50]"
-    [nzShowTotal]="totalTemplate"
-    (nzPageIndexChange)="onPageChange($event)"
-    (nzPageSizeChange)="onPageSizeChange($event)"
+    [nzShowPagination]="false"
     [nzScroll]="{ x: '1000px' }"
     nzSize="middle"
   >
-    <!-- Hiện tổng số kết quả ở pagination -->
-    <ng-template #totalTemplate let-total>
-      Tổng <strong>{{ total }}</strong> thành viên
-    </ng-template>
 
     <thead>
       <tr>
@@ -99,34 +99,28 @@
         <tr>
           <td nzAlign="center">{{ member.id }}</td>
 
-          <!-- Avatar + Name + Role tags -->
+          <!-- Avatar + Name -->
           <td>
             <div class="member-info">
               <nz-avatar
-                [nzSrc]="member.avatar ?? undefined"
+                [nzSrc]="member.avatar_full_url ?? undefined"
                 nzIcon="user"
                 [nzSize]="32"
               />
               <div class="member-detail">
                 <span class="member-name">{{ member.name }}</span>
-                <div class="member-roles">
-                  @for (role of member.roles; track role) {
-                    <nz-tag
-                      [nzColor]="role === 'admin' ? 'red' : role === 'translator' ? 'blue' : 'default'"
-                    >{{ role }}</nz-tag>
-                  }
-                </div>
+                <span class="member-level">Lv.{{ member.level }}</span>
               </div>
             </div>
           </td>
 
           <td class="text-muted">{{ member.email }}</td>
-          <td nzAlign="right">{{ member.score | number }}</td>
-          <td nzAlign="right">{{ member.score_used | number }}</td>
+          <td nzAlign="right">{{ member.total_points | number }}</td>
+          <td nzAlign="right">{{ member.used_points | number }}</td>
 
-          <!-- Trạng thái cấm -->
+          <!-- Trạng thái cấm — banned_until !== null nghĩa là đang bị cấm -->
           <td nzAlign="center">
-            @if (member.is_banned) {
+            @if (member.banned_until) {
               <nz-tag nzColor="error">Bị cấm</nz-tag>
             } @else {
               <nz-tag nzColor="success">Hoạt động</nz-tag>
@@ -140,12 +134,12 @@
             <div class="action-buttons">
               <button
                 nz-button
-                [nzType]="member.is_banned ? 'primary' : 'default'"
+                [nzType]="member.banned_until ? 'primary' : 'default'"
                 nzSize="small"
                 nz-popconfirm
-                [nzPopconfirmTitle]="member.is_banned ? 'Bỏ cấm thành viên này?' : 'Cấm thành viên này?'"
+                [nzPopconfirmTitle]="member.banned_until ? 'Bỏ cấm thành viên này?' : 'Cấm thành viên này?'"
                 (nzOnConfirm)="onBanUser(member)"
-                [title]="member.is_banned ? 'Bỏ cấm' : 'Cấm'"
+                [title]="member.banned_until ? 'Bỏ cấm' : 'Cấm'"
               >
                 <nz-icon nzType="stop" />
               </button>
@@ -167,4 +161,16 @@
       }
     </tbody>
   </nz-table>
+
+  <!-- Pagination phía dưới -->
+  @if (members().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
 </nz-card>

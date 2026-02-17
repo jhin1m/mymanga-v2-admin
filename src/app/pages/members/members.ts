@@ -17,6 +17,7 @@ import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { Member, MemberListParams, MembersService } from '../../core/services/members.service';
+import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-bar';
 
 @Component({
   selector: 'app-members',
@@ -35,6 +36,7 @@ import { Member, MemberListParams, MembersService } from '../../core/services/me
     NzTagModule,
     NzPopconfirmModule,
     NzAvatarModule,
+    PaginationBarComponent,
   ],
   templateUrl: './members.html',
   styleUrl: './members.less',
@@ -95,7 +97,7 @@ export class MembersComponent implements OnInit {
         // Defensive check: API có thể trả format khác hoặc lỗi
         // res?.data — optional chaining phòng trường hợp res undefined
         this.members.set(res?.data ?? []);
-        this.total.set(res?.meta?.total ?? 0);
+        this.total.set(res?.pagination?.total ?? 0);
         this.loading.set(false);
       },
       // error: xử lý khi API lỗi (network, 404, 500, etc.)
@@ -138,7 +140,7 @@ export class MembersComponent implements OnInit {
   onBanUser(member: Member): void {
     this.membersService.banUser(member.id).subscribe({
       next: () => {
-        this.message.success(`Đã ${member.is_banned ? 'bỏ cấm' : 'cấm'} thành viên "${member.name}"`);
+        this.message.success(`Đã ${member.banned_until ? 'bỏ cấm' : 'cấm'} thành viên "${member.name}"`);
         this.loadMembers(); // Reload để cập nhật trạng thái
       },
       error: () => this.message.error('Thao tác thất bại'),

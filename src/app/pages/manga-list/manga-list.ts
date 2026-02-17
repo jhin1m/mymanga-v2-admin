@@ -12,13 +12,13 @@ import { NzGridModule } from 'ng-zorro-antd/grid';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
-import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { Manga, MangaListParams, MangaService } from '../../core/services/manga.service';
+import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-bar';
 
 @Component({
   selector: 'app-manga-list',
@@ -34,10 +34,10 @@ import { Manga, MangaListParams, MangaService } from '../../core/services/manga.
     NzIconModule,
     NzTagModule,
     NzPopconfirmModule,
-    NzPaginationModule,
     NzEmptyModule,
     NzSpinModule,
     NzTooltipModule,
+    PaginationBarComponent,
   ],
   templateUrl: './manga-list.html',
   styleUrl: './manga-list.less',
@@ -100,7 +100,7 @@ export class MangaListComponent implements OnInit {
     this.mangaService.getMangas(params).subscribe({
       next: (res) => {
         this.mangas.set(res?.data ?? []);
-        this.total.set(res?.meta?.total ?? 0);
+        this.total.set(res?.pagination?.total ?? 0);
         this.loading.set(false);
       },
       error: () => {

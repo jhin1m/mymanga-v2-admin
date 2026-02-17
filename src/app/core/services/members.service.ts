@@ -8,30 +8,37 @@ import { ApiResponse } from './auth.service';
 
 /** Thông tin 1 thành viên từ API */
 export interface Member {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  score: number;
-  score_used: number;
-  avatar: string | null;
-  is_banned: boolean;
-  banned_at: string | null;
+  total_points: number;
+  used_points: number;
+  avatar_full_url: string | null;
+  banned_until: string | null;
   created_at: string;
-  roles: string[];
+  level: number;
+  exp: number;
 }
 
-/** Metadata phân trang từ Laravel */
-export interface PaginationMeta {
-  current_page: number;
-  last_page: number;
-  per_page: number;
+/** Thông tin phân trang từ API — nằm trong field "pagination" */
+export interface PaginationInfo {
+  count: number;
   total: number;
+  perPage: number;
+  currentPage: number;
+  totalPages: number;
+  links?: { next?: string; previous?: string };
 }
 
-/** Response có phân trang — Laravel trả data + meta */
+/**
+ * Response format thực tế từ API backend:
+ * { status: 200, success: true, data: [...], pagination: { total, perPage, ... } }
+ */
 export interface PaginatedResponse<T> {
+  status: number;
+  success: boolean;
   data: T[];
-  meta: PaginationMeta;
+  pagination: PaginationInfo;
 }
 
 /** Params gửi lên API để filter/phân trang */
@@ -71,12 +78,12 @@ export class MembersService {
   }
 
   /** Cấm/bỏ cấm thành viên */
-  banUser(id: number): Observable<ApiResponse<Member>> {
+  banUser(id: string): Observable<ApiResponse<Member>> {
     return this.http.post<ApiResponse<Member>>(`${this.apiBase}/${id}/ban`, {});
   }
 
   /** Xóa tất cả bình luận của thành viên */
-  deleteUserComments(id: number): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.apiBase}/${id}/comments`);
+  deleteUserComments(id: string): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiBase}/${id}/delete-comment`);
   }
 }
