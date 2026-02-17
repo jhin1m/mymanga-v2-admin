@@ -1,0 +1,170 @@
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Tìm kiếm thành viên" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="6">
+        <nz-form-item>
+          <nz-form-label>User ID</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="id" placeholder="Nhập ID" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="6">
+        <nz-form-item>
+          <nz-form-label>Tên</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="name" placeholder="Nhập tên" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="6">
+        <nz-form-item>
+          <nz-form-label>Email</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="email" placeholder="Nhập email" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="6">
+        <nz-form-item>
+          <nz-form-label>Chức danh</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="role" nzPlaceHolder="Tất cả" nzAllowClear>
+              @for (role of roles; track role.value) {
+                <nz-option [nzValue]="role.value" [nzLabel]="role.label" />
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <!-- Template cho nút search/reset ở góc phải card header -->
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Members Table -->
+<nz-card class="table-card">
+  <nz-table
+    #memberTable
+    [nzData]="members()"
+    [nzLoading]="loading()"
+    [nzTotal]="total()"
+    [nzPageIndex]="pageIndex()"
+    [nzPageSize]="pageSize()"
+    [nzFrontPagination]="false"
+    [nzShowSizeChanger]="true"
+    [nzPageSizeOptions]="[10, 20, 50]"
+    [nzShowTotal]="totalTemplate"
+    (nzPageIndexChange)="onPageChange($event)"
+    (nzPageSizeChange)="onPageSizeChange($event)"
+    [nzScroll]="{ x: '1000px' }"
+    nzSize="middle"
+  >
+    <!-- Hiện tổng số kết quả ở pagination -->
+    <ng-template #totalTemplate let-total>
+      Tổng <strong>{{ total }}</strong> thành viên
+    </ng-template>
+
+    <thead>
+      <tr>
+        <th nzWidth="100px" nzAlign="center">ID</th>
+        <th nzWidth="240px">Thành viên</th>
+        <th nzWidth="200px">Email</th>
+        <th nzWidth="110px" nzAlign="right">Tổng điểm</th>
+        <th nzWidth="110px" nzAlign="right">Điểm dùng</th>
+        <th nzWidth="120px" nzAlign="center">Trạng thái</th>
+        <th nzWidth="150px">Ngày tạo</th>
+        <th nzWidth="160px" nzAlign="center" nzRight>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (member of memberTable.data; track member.id) {
+        <tr>
+          <td nzAlign="center">{{ member.id }}</td>
+
+          <!-- Avatar + Name + Role tags -->
+          <td>
+            <div class="member-info">
+              <nz-avatar
+                [nzSrc]="member.avatar ?? undefined"
+                nzIcon="user"
+                [nzSize]="32"
+              />
+              <div class="member-detail">
+                <span class="member-name">{{ member.name }}</span>
+                <div class="member-roles">
+                  @for (role of member.roles; track role) {
+                    <nz-tag
+                      [nzColor]="role === 'admin' ? 'red' : role === 'translator' ? 'blue' : 'default'"
+                    >{{ role }}</nz-tag>
+                  }
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <td class="text-muted">{{ member.email }}</td>
+          <td nzAlign="right">{{ member.score | number }}</td>
+          <td nzAlign="right">{{ member.score_used | number }}</td>
+
+          <!-- Trạng thái cấm -->
+          <td nzAlign="center">
+            @if (member.is_banned) {
+              <nz-tag nzColor="error">Bị cấm</nz-tag>
+            } @else {
+              <nz-tag nzColor="success">Hoạt động</nz-tag>
+            }
+          </td>
+
+          <td class="text-muted">{{ member.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <!-- Action buttons — sticky right -->
+          <td nzAlign="center" nzRight>
+            <div class="action-buttons">
+              <button
+                nz-button
+                [nzType]="member.is_banned ? 'primary' : 'default'"
+                nzSize="small"
+                nz-popconfirm
+                [nzPopconfirmTitle]="member.is_banned ? 'Bỏ cấm thành viên này?' : 'Cấm thành viên này?'"
+                (nzOnConfirm)="onBanUser(member)"
+                [title]="member.is_banned ? 'Bỏ cấm' : 'Cấm'"
+              >
+                <nz-icon nzType="stop" />
+              </button>
+
+              <button
+                nz-button
+                nzDanger
+                nzSize="small"
+                nz-popconfirm
+                nzPopconfirmTitle="Xóa tất cả bình luận của thành viên này?"
+                (nzOnConfirm)="onDeleteComments(member)"
+                title="Xóa bình luận"
+              >
+                <nz-icon nzType="delete" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>

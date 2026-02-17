@@ -22,6 +22,10 @@ import {
   LogoutOutline,
   SettingOutline,
   DownOutline,
+  SearchOutline,
+  StopOutline,
+  DeleteOutline,
+  RedoOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { registerLocaleData } from '@angular/common';
@@ -53,6 +57,10 @@ const icons = [
   LogoutOutline,
   SettingOutline,
   DownOutline,
+  SearchOutline,
+  StopOutline,
+  DeleteOutline,
+  RedoOutline,
 ];
 
 // Factory function for APP_INITIALIZER

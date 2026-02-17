@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  padding: 24px;
+}
+
+// --- Search Card ---
+.search-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// Bỏ margin-bottom mặc định của nz-form-item trong search form
+::ng-deep nz-form-item {
+  margin-bottom: 0;
+}
+
+// --- Table Card ---
+.table-card {
+  margin-top: 16px;
+
+  // Bỏ padding thừa để table sát mép card
+  ::ng-deep .ant-card-body {
+    padding: 0;
+  }
+
+  // Pagination cần padding lại
+  ::ng-deep .ant-table-pagination {
+    padding: 0 16px;
+  }
+}
+
+// --- Member Info Cell (avatar + name + roles) ---
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; // Cho phép text truncate
+}
+
+.member-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-roles {
+  display: flex;
+  gap: 4px;
+
+  // Tag nhỏ hơn cho gọn
+  nz-tag {
+    margin: 0;
+    font-size: 11px;
+    line-height: 18px;
+    padding: 0 4px;
+  }
+}
+
+// --- Muted text (email, date) ---
+.text-muted {
+  opacity: 0.65;
+}
+
+// --- Action Buttons ---
+.action-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
