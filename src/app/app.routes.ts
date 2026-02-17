@@ -23,6 +23,17 @@ export const routes: Routes = [
         path: 'members',
         loadComponent: () => import('./pages/members/members').then((m) => m.MembersComponent),
       },
+      {
+        path: 'manga',
+        children: [
+          {
+            path: 'list',
+            loadComponent: () =>
+              import('./pages/manga-list/manga-list').then((m) => m.MangaListComponent),
+          },
+          { path: '', redirectTo: 'list', pathMatch: 'full' },
+        ],
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

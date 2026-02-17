@@ -1,0 +1,174 @@
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Danh sách truyện" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <!-- Tên truyện -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Tên truyện, tên khác:</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="name" placeholder="" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Nhóm dịch -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Nhóm dịch:</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="group_id" placeholder="Tìm kiếm từ 2 ký tự" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Người đăng -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Người đăng:</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="user_id" placeholder="Tìm kiếm từ 2 ký tự" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Tác giả -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Tác giả:</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="artist_id" placeholder="Tìm kiếm từ 2 ký tự" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Doujinshi -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Doujinshi:</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="doujinshi_id" placeholder="Tìm kiếm từ 2 ký tự" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <!-- Duyệt -->
+      <div nz-col [nzXs]="24" [nzSm]="12">
+        <nz-form-item>
+          <nz-form-label>Duyệt:</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="is_reviewed" nzPlaceHolder="Tất cả" nzAllowClear>
+              @for (opt of reviewOptions; track opt.value) {
+                <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <!-- Nút Reset + Tìm kiếm ở góc phải card header -->
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Manga Grid -->
+<nz-card class="grid-card">
+  <!-- Pagination phía trên -->
+  <div class="grid-toolbar">
+    <span class="total-text">
+      Tổng <strong>{{ total() }}</strong> truyện
+    </span>
+    <nz-pagination
+      [nzPageIndex]="pageIndex()"
+      [nzPageSize]="pageSize()"
+      [nzTotal]="total()"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[10, 20, 50]"
+      nzSize="small"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+    />
+  </div>
+
+  <!-- Loading spinner -->
+  <nz-spin [nzSpinning]="loading()">
+    <!-- Empty state khi không có data -->
+    @if (!loading() && mangas().length === 0) {
+      <nz-empty nzNotFoundContent="Không tìm thấy manga nào" />
+    }
+
+    <!-- Grid hiển thị manga cards -->
+    <div class="manga-grid">
+      @for (manga of mangas(); track manga.id) {
+        <div class="manga-card">
+          <!-- Ảnh bìa -->
+          <div class="manga-cover">
+            @if (manga.cover_full_url) {
+              <img [src]="manga.cover_full_url" [alt]="manga.name" loading="lazy" />
+            } @else {
+              <div class="no-cover">
+                <nz-icon nzType="book" />
+              </div>
+            }
+
+            <!-- Nút xoá ở góc dưới ảnh -->
+            <button
+              class="delete-btn"
+              nz-button
+              nzType="primary"
+              nzDanger
+              nzSize="small"
+              nz-popconfirm
+              nzPopconfirmTitle="Xoá manga này? Tất cả chapters sẽ bị xoá theo!"
+              (nzOnConfirm)="onDeleteManga(manga)"
+              nz-tooltip
+              nzTooltipTitle="Xoá manga"
+            >
+              <nz-icon nzType="delete" />
+            </button>
+          </div>
+
+          <!-- Thông tin manga -->
+          <div class="manga-info">
+            <a class="manga-name" [title]="manga.name">{{ manga.name }}</a>
+
+            <!-- Tags thể loại -->
+            <div class="manga-genres">
+              @for (genre of manga.genres; track genre.id) {
+                <nz-tag>{{ genre.name | uppercase }}</nz-tag>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </nz-spin>
+
+  <!-- Pagination phía dưới -->
+  @if (mangas().length > 0) {
+    <div class="grid-toolbar bottom">
+      <nz-pagination
+        [nzPageIndex]="pageIndex()"
+        [nzPageSize]="pageSize()"
+        [nzTotal]="total()"
+        [nzShowSizeChanger]="true"
+        [nzPageSizeOptions]="[10, 20, 50]"
+        nzSize="small"
+        (nzPageIndexChange)="onPageChange($event)"
+        (nzPageSizeChange)="onPageSizeChange($event)"
+      />
+    </div>
+  }
+</nz-card>
