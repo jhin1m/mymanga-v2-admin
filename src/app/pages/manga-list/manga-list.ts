@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
 
 // NG-ZORRO modules
@@ -24,6 +25,7 @@ import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-b
   selector: 'app-manga-list',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     UpperCasePipe,
     NzCardModule,
     NzFormModule,

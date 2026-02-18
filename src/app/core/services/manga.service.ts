@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/api-types';
+import { ApiResponse } from './auth.service';
 
 // --- Interfaces mô tả shape data từ API ---
 
@@ -83,8 +84,20 @@ export class MangaService {
     return this.http.get<PaginatedResponse<Manga>>(this.apiBase, { params: httpParams });
   }
 
+  /** Lấy chi tiết 1 manga theo UUID */
+  getManga(id: string): Observable<ApiResponse<Manga>> {
+    return this.http.get<ApiResponse<Manga>>(`${this.apiBase}/${id}`, {
+      params: { include: 'user,genres,artist,group,doujinshi' },
+    });
+  }
+
+  /** Cập nhật manga — gửi FormData vì có file cover */
+  updateManga(id: string, formData: FormData): Observable<ApiResponse<Manga>> {
+    return this.http.post<ApiResponse<Manga>>(`${this.apiBase}/${id}`, formData);
+  }
+
   /** Xoá manga theo UUID — trả 204 No Content */
   deleteManga(id: string): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrl}/api/admin/manga/${id}`);
+    return this.http.delete<void>(`${this.apiBase}/${id}`);
   }
 }

@@ -26,10 +26,20 @@ import {
   StopOutline,
   DeleteOutline,
   RedoOutline,
+  SaveOutline,
+  ArrowLeftOutline,
+  PlusOutline,
+  EditOutline,
+  CheckOutline,
+  CloseOutline,
+  UploadOutline,
+  ExclamationCircleOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { registerLocaleData } from '@angular/common';
 import { vi_VN } from 'ng-zorro-antd/i18n';
+
+import { NGX_EDITOR_CONFIG_TOKEN } from 'ngx-editor';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -61,6 +71,14 @@ const icons = [
   StopOutline,
   DeleteOutline,
   RedoOutline,
+  SaveOutline,
+  ArrowLeftOutline,
+  PlusOutline,
+  EditOutline,
+  CheckOutline,
+  CloseOutline,
+  UploadOutline,
+  ExclamationCircleOutline,
 ];
 
 // Factory function for APP_INITIALIZER
@@ -84,6 +102,7 @@ export const appConfig: ApplicationConfig = {
         delon: delonViVN,
       },
     }),
+    { provide: NGX_EDITOR_CONFIG_TOKEN, useValue: {} },
     {
       provide: APP_INITIALIZER,
       useFactory: initializeApp,

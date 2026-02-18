@@ -40,6 +40,11 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./pages/manga-list/manga-list').then((m) => m.MangaListComponent),
           },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./pages/manga-edit/manga-edit').then((m) => m.MangaEditComponent),
+          },
           { path: '', redirectTo: 'list', pathMatch: 'full' },
         ],
       },

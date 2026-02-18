@@ -117,26 +117,39 @@
               </div>
             }
 
-            <!-- Nút xoá ở góc dưới ảnh -->
-            <button
-              class="delete-btn"
-              nz-button
-              nzType="primary"
-              nzDanger
-              nzSize="small"
-              nz-popconfirm
-              nzPopconfirmTitle="Xoá manga này? Tất cả chapters sẽ bị xoá theo!"
-              (nzOnConfirm)="onDeleteManga(manga)"
-              nz-tooltip
-              nzTooltipTitle="Xoá manga"
-            >
-              <nz-icon nzType="delete" />
-            </button>
+            <!-- Nút edit + xoá ở góc dưới ảnh -->
+            <div class="cover-actions">
+              <a
+                class="edit-btn"
+                nz-button
+                nzType="primary"
+                nzSize="small"
+                [routerLink]="['/manga/edit', manga.id]"
+                nz-tooltip
+                nzTooltipTitle="Chỉnh sửa"
+              >
+                <nz-icon nzType="edit" />
+              </a>
+              <button
+                class="delete-btn"
+                nz-button
+                nzType="primary"
+                nzDanger
+                nzSize="small"
+                nz-popconfirm
+                nzPopconfirmTitle="Xoá manga này? Tất cả chapters sẽ bị xoá theo!"
+                (nzOnConfirm)="onDeleteManga(manga)"
+                nz-tooltip
+                nzTooltipTitle="Xoá manga"
+              >
+                <nz-icon nzType="delete" />
+              </button>
+            </div>
           </div>
 
           <!-- Thông tin manga -->
           <div class="manga-info">
-            <a class="manga-name" [title]="manga.name">{{ manga.name }}</a>
+            <a class="manga-name" [routerLink]="['/manga/edit', manga.id]" [title]="manga.name">{{ manga.name }}</a>
 
             <!-- Tags thể loại -->
             <div class="manga-genres">

@@ -1,0 +1,320 @@
+<!-- Top bar: back + title + save -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <button nz-button nzType="text" (click)="onBack()">
+      <nz-icon nzType="arrow-left" />
+    </button>
+    <h3 class="page-title">Chỉnh sửa truyện</h3>
+    @if (manga(); as m) {
+      <span class="updated-at">Cập nhật lần cuối: {{ m.updated_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+    }
+  </div>
+  <button nz-button nzType="primary" (click)="onSave()" [nzLoading]="saving()">
+    <nz-icon nzType="save" />
+    Lưu
+  </button>
+</div>
+
+<nz-spin [nzSpinning]="loading()">
+  <form [formGroup]="editForm" class="edit-content">
+    <div nz-row [nzGutter]="16">
+      <!-- LEFT COLUMN: Main form fields -->
+      <div nz-col [nzXs]="24" [nzLg]="16">
+        <nz-card nzTitle="Thông tin chung" [nzExtra]="hotSwitchTpl">
+          <!-- Template hiển thị switch "Truyện hot" bên phải tiêu đề card -->
+          <ng-template #hotSwitchTpl>
+            <div class="hot-switch">
+              <span>Truyện hot</span>
+              <nz-switch formControlName="is_hot" />
+            </div>
+          </ng-template>
+          <!-- Tên truyện -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24" nzRequired>Tên truyện</nz-form-label>
+            <nz-form-control [nzSpan]="24" nzErrorTip="Vui lòng nhập tên truyện">
+              <input nz-input formControlName="name" placeholder="Nhập tên truyện" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Tên khác -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Tên khác</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <input nz-input formControlName="name_alt" placeholder="Tên tiếng Anh, tiếng Nhật..." />
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Doujinshi -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Doujinshi</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <nz-select
+                formControlName="doujinshi_id"
+                nzPlaceHolder="Tìm doujinshi từ 2 ký tự"
+                nzShowSearch
+                nzServerSearch
+                nzAllowClear
+                [nzLoading]="doujinshiLoading()"
+                (nzOnSearch)="onDoujinshiSearch($event)"
+              >
+                @for (d of doujinshiOptions(); track d.id) {
+                  <nz-option [nzValue]="d.id" [nzLabel]="d.name" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Người hoàn thành -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Người hoàn thành</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <input nz-input formControlName="finished_by" placeholder="Tên người hoàn thành" />
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Thể loại (Genre checkboxes) -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Thể loại</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <div nz-row [nzGutter]="[8, 8]" class="genre-grid">
+                @for (genre of allGenres(); track genre.id) {
+                  <div nz-col [nzSpan]="6">
+                    <label
+                      nz-checkbox
+                      [nzChecked]="isGenreSelected(genre.id)"
+                      (nzCheckedChange)="onGenreChange(genre.id, $event)"
+                    >
+                      {{ genre.name }}
+                    </label>
+                  </div>
+                }
+              </div>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Pilot (nội dung giới thiệu) — rich text editor -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Nội dung giới thiệu</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <div class="ngx-editor-wrapper">
+                <ngx-editor-menu [editor]="pilotEditor" [toolbar]="pilotToolbar" />
+                <ngx-editor
+                  [editor]="pilotEditor"
+                  formControlName="pilot"
+                  [placeholder]="'Mô tả ngắn về truyện...'"
+                  outputFormat="html"
+                />
+              </div>
+            </nz-form-control>
+          </nz-form-item>
+        </nz-card>
+      </div>
+
+      <!-- RIGHT COLUMN: Sidebar -->
+      <div nz-col [nzXs]="24" [nzLg]="8">
+        <!-- Cover upload — dạng nút ngang đơn giản (basic style) -->
+        <nz-card nzTitle="Ảnh bìa" class="sidebar-card cover-card">
+          @if (coverPreviewUrl()) {
+            <img [src]="coverPreviewUrl()" alt="Cover preview" class="cover-preview" />
+          }
+          <nz-upload
+            [nzShowUploadList]="false"
+            [nzBeforeUpload]="beforeCoverUpload"
+            nzAccept="image/*"
+          >
+            <button nz-button>
+              <nz-icon nzType="upload" />
+              {{ coverPreviewUrl() ? 'Đổi ảnh' : 'Tải ảnh bìa' }}
+            </button>
+          </nz-upload>
+        </nz-card>
+
+        <!-- Status + Relations -->
+        <nz-card nzTitle="Cài đặt" class="sidebar-card">
+          <!-- Trạng thái -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Trạng thái</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <nz-select formControlName="status" nzPlaceHolder="Chọn trạng thái">
+                @for (opt of statusOptions; track opt.value) {
+                  <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Tác giả -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Tác giả</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <nz-select
+                formControlName="artist_id"
+                nzPlaceHolder="Tìm tác giả từ 2 ký tự"
+                nzShowSearch
+                nzServerSearch
+                nzAllowClear
+                [nzLoading]="artistLoading()"
+                (nzOnSearch)="onArtistSearch($event)"
+              >
+                @for (a of artistOptions(); track a.id) {
+                  <nz-option [nzValue]="a.id" [nzLabel]="a.name" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Nhóm dịch -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Nhóm dịch</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <nz-select
+                formControlName="group_id"
+                nzPlaceHolder="Tìm nhóm dịch từ 2 ký tự"
+                nzShowSearch
+                nzServerSearch
+                nzAllowClear
+                [nzLoading]="groupLoading()"
+                (nzOnSearch)="onGroupSearch($event)"
+              >
+                @for (g of groupOptions(); track g.id) {
+                  <nz-option [nzValue]="g.id" [nzLabel]="g.name" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Người đăng -->
+          <nz-form-item>
+            <nz-form-label [nzSpan]="24">Người đăng</nz-form-label>
+            <nz-form-control [nzSpan]="24">
+              <nz-select
+                formControlName="user_id"
+                nzPlaceHolder="Tìm người dùng từ 2 ký tự"
+                nzShowSearch
+                nzServerSearch
+                nzAllowClear
+                [nzLoading]="userLoading()"
+                (nzOnSearch)="onUserSearch($event)"
+              >
+                @for (u of userOptions(); track u.id) {
+                  <nz-option [nzValue]="u.id" [nzLabel]="u.name" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+
+        </nz-card>
+      </div>
+    </div>
+
+    <!-- CHAPTER LIST SECTION -->
+    <nz-card nz-col [nzXs]="24" [nzLg]="16"
+      class="chapters-card"
+      nzTitle="Danh sách chương"
+      [nzExtra]="chapterActions"
+    >
+      <ng-template #chapterActions>
+        <div class="chapter-actions">
+          @if (hasCheckedChapters) {
+            <button
+              nz-button
+              nzType="primary"
+              nzDanger
+              nzSize="small"
+              (click)="onBulkDeleteChapters()"
+            >
+              <nz-icon nzType="delete" />
+              Xoá ({{ checkedChapterIds().size }})
+            </button>
+          }
+          <button nz-button nzType="primary" nzSize="small" (click)="onNavigateCreateChapter()">
+            <nz-icon nzType="plus" />
+            Tạo mới
+          </button>
+        </div>
+      </ng-template>
+
+      <!-- Pagination top -->
+      <app-pagination-bar
+        [total]="chaptersTotal()"
+        [pageIndex]="chaptersPageIndex()"
+        [pageSize]="chaptersPageSize()"
+        totalLabel="chương"
+        position="top"
+        (pageIndexChange)="onChaptersPageChange($event)"
+        (pageSizeChange)="onChaptersPageSizeChange($event)"
+      />
+
+      <nz-table
+        #chapterTable
+        [nzData]="chapters()"
+        [nzLoading]="chaptersLoading()"
+        [nzShowPagination]="false"
+        nzSize="small"
+        [nzFrontPagination]="false"
+      >
+        <thead>
+          <tr>
+            <th
+              nzWidth="40px"
+              [nzChecked]="allChaptersChecked()"
+              (nzCheckedChange)="onAllChaptersChecked($event)"
+            ></th>
+            <th>Tên chương</th>
+            <th nzWidth="120px">Ngày tạo</th>
+            <th nzWidth="100px" nzAlign="center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (chapter of chapters(); track chapter.id) {
+            <tr>
+              <td
+                [nzChecked]="isChapterChecked(chapter.id)"
+                (nzCheckedChange)="onChapterChecked(chapter.id, $event)"
+              ></td>
+              <td>{{ chapter.name }}</td>
+              <td>{{ chapter.created_at | date: 'dd/MM/yyyy' }}</td>
+              <td nzAlign="center">
+                <button
+                  nz-button
+                  nzType="text"
+                  nzSize="small"
+                  nz-tooltip
+                  nzTooltipTitle="Sửa"
+                  (click)="onNavigateEditChapter(chapter)"
+                >
+                  <nz-icon nzType="edit" />
+                </button>
+                <button
+                  nz-button
+                  nzType="text"
+                  nzDanger
+                  nzSize="small"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Xoá chương này?"
+                  (nzOnConfirm)="onDeleteChapter(chapter)"
+                  nz-tooltip
+                  nzTooltipTitle="Xoá"
+                >
+                  <nz-icon nzType="delete" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </nz-table>
+
+      <!-- Pagination bottom -->
+      @if (chapters().length > 0) {
+        <app-pagination-bar
+          [total]="chaptersTotal()"
+          [pageIndex]="chaptersPageIndex()"
+          [pageSize]="chaptersPageSize()"
+          position="bottom"
+          (pageIndexChange)="onChaptersPageChange($event)"
+          (pageSizeChange)="onChaptersPageSizeChange($event)"
+        />
+      }
+    </nz-card>
+  </form>
+</nz-spin>

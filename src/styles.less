@@ -13,3 +13,27 @@
 @import 'ng-zorro-antd/style/core/index';
 @import 'ng-zorro-antd/style/patch.less';
 @import 'ng-zorro-antd/components.less';
+
+// 5. ngx-editor dark theme overrides
+.NgxEditor {
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  min-height: 150px;
+}
+
+.NgxEditor__MenuBar {
+  background-color: rgba(255, 255, 255, 0.04)!important;
+  border-color: rgba(255, 255, 255, 0.15)!important;
+}
+.NgxEditor__MenuItem.NgxEditor__MenuItem--IconContainer {
+    color: #fff;
+}
+
+.NgxEditor__Dropdown:hover{
+  background-color: #383838;
+}
+
+.NgxEditor__Dropdown--Item{
+  background-color: #000!important;
+}
