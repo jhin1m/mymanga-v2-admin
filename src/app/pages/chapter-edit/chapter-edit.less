@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  padding: 24px;
+}
+
+// --- Top bar (same pattern as manga-edit) ---
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.updated-at {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+// --- Form spacing ---
+::ng-deep nz-form-item {
+  margin-bottom: 12px;
+}
+
+// --- Images card ---
+.images-card {
+  margin-top: 16px;
+}
+
+// --- Soft delete notice ---
+.deletion-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  background: rgba(255, 77, 79, 0.08);
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+.image-list {
+  margin-top: 16px;
+}
+
+.image-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: move;
+
+  // Pending items: viền xanh dương nhạt để phân biệt
+  &.pending {
+    border-color: rgba(24, 144, 255, 0.3);
+    background: rgba(24, 144, 255, 0.04);
+    cursor: default;
+  }
+
+  // Trạng thái upload xong
+  &.is-done {
+    border-color: rgba(82, 196, 26, 0.3);
+    background: rgba(82, 196, 26, 0.04);
+  }
+
+  // Trạng thái upload lỗi
+  &.is-error {
+    border-color: rgba(255, 77, 79, 0.3);
+    background: rgba(255, 77, 79, 0.04);
+  }
+
+  // Đang upload: hiệu ứng nhấp nháy nhẹ
+  &.is-uploading {
+    border-color: rgba(24, 144, 255, 0.5);
+    animation: pulse-border 1.5s ease-in-out infinite;
+  }
+
+  &.cdk-drag-preview {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(24, 144, 255, 0.3); }
+  50% { border-color: rgba(24, 144, 255, 0.7); }
+}
+
+// --- Upload status indicator (per-image) ---
+.upload-status {
+  margin-left: auto;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+
+  &.uploading { color: #1890ff; }
+  &.done { color: #52c41a; }
+  &.error { color: #ff4d4f; }
+  &.waiting { opacity: 0.5; }
+}
+
+// Nút xoá file pending
+.remove-btn {
+  margin-left: auto;
+}
+
+// Header cho pending section
+.pending-section {
+  margin-top: 16px;
+}
+
+.pending-header {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.drag-handle {
+  cursor: grab;
+  opacity: 0.5;
+}
+
+.image-thumb {
+  width: 100px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.image-label {
+  font-size: 13px;
+}
+
+// CDK drag placeholder & animation
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}

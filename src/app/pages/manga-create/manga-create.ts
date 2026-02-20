@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -15,28 +14,19 @@ import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzUploadFile, NzUploadModule } from 'ng-zorro-antd/upload';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzDividerModule } from 'ng-zorro-antd/divider';
-import { NzTableModule } from 'ng-zorro-antd/table';
-import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
-import { NzModalService } from 'ng-zorro-antd/modal';
-import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { Editor, NgxEditorModule, Toolbar } from 'ngx-editor';
 
-import { Manga, MangaService } from '../../core/services/manga.service';
+import { MangaService } from '../../core/services/manga.service';
 import { GenreSimple, GenresService } from '../../core/services/genres.service';
 import { ArtistsService, Artist } from '../../core/services/artists.service';
 import { GroupsService, Group } from '../../core/services/groups.service';
 import { DoujinshisService, Doujinshi } from '../../core/services/doujinshis.service';
 import { MembersService, Member } from '../../core/services/members.service';
-import { Chapter, ChaptersService } from '../../core/services/chapters.service';
-import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-bar';
 
 @Component({
-  selector: 'app-manga-edit',
+  selector: 'app-manga-create',
   imports: [
     ReactiveFormsModule,
-    DatePipe,
     NzCardModule,
     NzFormModule,
     NzInputModule,
@@ -47,36 +37,24 @@ import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-b
     NzCheckboxModule,
     NzSwitchModule,
     NzUploadModule,
-    NzSpinModule,
-    NzDividerModule,
-    NzTableModule,
-    NzPopconfirmModule,
-    NzTooltipModule,
     NgxEditorModule,
-    PaginationBarComponent,
   ],
-  templateUrl: './manga-edit.html',
-  styleUrl: './manga-edit.less',
+  templateUrl: './manga-create.html',
+  styleUrl: './manga-create.less',
 })
-export class MangaEditComponent implements OnInit, OnDestroy {
-  private readonly route = inject(ActivatedRoute);
+export class MangaCreateComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly message = inject(NzMessageService);
-  private readonly modal = inject(NzModalService);
   private readonly mangaService = inject(MangaService);
   private readonly genresService = inject(GenresService);
   private readonly artistsService = inject(ArtistsService);
   private readonly groupsService = inject(GroupsService);
   private readonly doujinshisService = inject(DoujinshisService);
   private readonly membersService = inject(MembersService);
-  private readonly chaptersService = inject(ChaptersService);
 
   // --- State ---
-  protected readonly loading = signal(true);
   protected readonly saving = signal(false);
-  protected readonly manga = signal<Manga | null>(null);
-  protected readonly mangaId = signal('');
 
   // Genre checkboxes
   protected readonly allGenres = signal<GenreSimple[]>([]);
@@ -96,23 +74,14 @@ export class MangaEditComponent implements OnInit, OnDestroy {
   protected coverFile: File | null = null;
   protected readonly coverPreviewUrl = signal<string>('');
 
-  // Chapter list
-  protected readonly chapters = signal<Chapter[]>([]);
-  protected readonly chaptersLoading = signal(false);
-  protected readonly chaptersTotal = signal(0);
-  protected readonly chaptersPageIndex = signal(1);
-  protected readonly chaptersPageSize = signal(20);
-  protected readonly checkedChapterIds = signal<Set<string>>(new Set());
-  protected readonly allChaptersChecked = signal(false);
-
-  // Search subjects for server-search dropdowns
+  // Search subjects
   private readonly artistSearch$ = new Subject<string>();
   private readonly groupSearch$ = new Subject<string>();
   private readonly doujinshiSearch$ = new Subject<string>();
   private readonly userSearch$ = new Subject<string>();
 
   // --- Form ---
-  protected readonly editForm = this.fb.group({
+  protected readonly createForm = this.fb.group({
     name: ['', Validators.required],
     name_alt: [''],
     pilot: [''],
@@ -130,7 +99,7 @@ export class MangaEditComponent implements OnInit, OnDestroy {
     { label: 'Hoàn thành', value: 1 },
   ];
 
-  // ngx-editor — ProseMirror-based, không cần API key
+  // ngx-editor
   protected pilotEditor = new Editor();
   protected readonly pilotToolbar: Toolbar = [
     ['bold', 'italic', 'underline', 'strike'],
@@ -146,95 +115,11 @@ export class MangaEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Lấy manga ID từ route param
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
-    this.mangaId.set(id);
-
-    // Setup search debounce cho dropdowns
     this.setupSearchStreams();
-
-    // Load genres + manga data song song
     this.loadGenres();
-    this.loadManga(id);
   }
 
   // ========== DATA LOADING ==========
-
-  private loadManga(id: string): void {
-    this.loading.set(true);
-    this.mangaService.getManga(id).subscribe({
-      next: (res) => {
-        const manga = res.data;
-        if (!manga) {
-          this.message.error('Không tìm thấy manga');
-          this.router.navigate(['/manga/list']);
-          return;
-        }
-        this.manga.set(manga);
-        this.patchForm(manga);
-        this.loading.set(false);
-
-        // Load chapters sau khi có manga data
-        this.loadChapters();
-      },
-      error: () => {
-        this.message.error('Không thể tải thông tin manga');
-        this.loading.set(false);
-      },
-    });
-  }
-
-  private patchForm(manga: Manga): void {
-    this.editForm.patchValue({
-      name: manga.name,
-      name_alt: manga.name_alt ?? '',
-      pilot: manga.pilot ?? '',
-      status: manga.status,
-      is_hot: manga.is_hot,
-      artist_id: manga.artist?.id ?? '',
-      group_id: manga.group?.id ?? '',
-      doujinshi_id: manga.doujinshi?.id ?? '',
-      user_id: manga.user?.id ?? '',
-      finished_by: manga.finished_by ?? '',
-    });
-
-    // Set cover preview từ URL hiện tại
-    if (manga.cover_full_url) {
-      this.coverPreviewUrl.set(manga.cover_full_url);
-    }
-
-    // Set selected genres
-    if (manga.genres?.length) {
-      this.selectedGenreIds.set(manga.genres.map((g) => g.id));
-    }
-
-    // Pre-populate dropdown options với data hiện tại
-    if (manga.artist) {
-      this.artistOptions.set([{ ...manga.artist, slug: '', user_id: '', created_at: '', updated_at: '' } as Artist]);
-    }
-    if (manga.group) {
-      this.groupOptions.set([{ ...manga.group, slug: '', created_at: '', updated_at: '' } as Group]);
-    }
-    if (manga.doujinshi) {
-      this.doujinshiOptions.set([
-        { ...manga.doujinshi, slug: '', user_id: '', created_at: '', updated_at: '' } as Doujinshi,
-      ]);
-    }
-    if (manga.user) {
-      this.userOptions.set([
-        {
-          ...manga.user,
-          total_points: 0,
-          used_points: 0,
-          avatar_full_url: null,
-          banned_until: null,
-          created_at: '',
-          level: 0,
-          exp: 0,
-        } as Member,
-      ]);
-    }
-  }
 
   private loadGenres(): void {
     this.genresService.getAllGenres().subscribe({
@@ -246,7 +131,6 @@ export class MangaEditComponent implements OnInit, OnDestroy {
   // ========== SEARCH DROPDOWNS ==========
 
   private setupSearchStreams(): void {
-    // Artist search — debounce 300ms, gọi API khi >= 2 ký tự
     this.artistSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
       if (term.length < 2) return;
       this.artistLoading.set(true);
@@ -259,7 +143,6 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Group search
     this.groupSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
       if (term.length < 2) return;
       this.groupLoading.set(true);
@@ -272,7 +155,6 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Doujinshi search
     this.doujinshiSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
       if (term.length < 2) return;
       this.doujinshiLoading.set(true);
@@ -285,7 +167,6 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       });
     });
 
-    // User search — nzServerSearch pattern vì có nhiều users
     this.userSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
       if (term.length < 2) return;
       this.userLoading.set(true);
@@ -332,12 +213,10 @@ export class MangaEditComponent implements OnInit, OnDestroy {
 
   // ========== COVER UPLOAD ==========
 
-  /** Xử lý trước khi upload — chỉ lưu file, không gửi lên server */
   beforeCoverUpload = (file: NzUploadFile): boolean => {
     const rawFile = file as unknown as File;
     this.coverFile = rawFile;
 
-    // Tạo preview URL từ file local
     const reader = new FileReader();
     reader.onload = () => this.coverPreviewUrl.set(reader.result as string);
     reader.readAsDataURL(rawFile);
@@ -348,9 +227,8 @@ export class MangaEditComponent implements OnInit, OnDestroy {
   // ========== SAVE ==========
 
   onSave(): void {
-    if (this.editForm.invalid) {
-      // Đánh dấu tất cả fields để hiện lỗi validation
-      Object.values(this.editForm.controls).forEach((c) => {
+    if (this.createForm.invalid) {
+      Object.values(this.createForm.controls).forEach((c) => {
         c.markAsDirty();
         c.updateValueAndValidity();
       });
@@ -360,15 +238,19 @@ export class MangaEditComponent implements OnInit, OnDestroy {
     this.saving.set(true);
     const formData = this.buildFormData();
 
-    this.mangaService.updateManga(this.mangaId(), formData).subscribe({
-      next: () => {
-        this.message.success('Cập nhật manga thành công');
+    this.mangaService.createManga(formData).subscribe({
+      next: (res) => {
+        this.message.success('Tạo manga thành công');
         this.saving.set(false);
-        // Reload data sau khi save (ở lại trang edit)
-        this.loadManga(this.mangaId());
+        // Chuyển sang trang edit sau khi tạo thành công
+        if (res.data?.id) {
+          this.router.navigate(['/manga/edit', res.data.id]);
+        } else {
+          this.router.navigate(['/manga/list']);
+        }
       },
       error: () => {
-        this.message.error('Cập nhật manga thất bại');
+        this.message.error('Tạo manga thất bại');
         this.saving.set(false);
       },
     });
@@ -376,10 +258,8 @@ export class MangaEditComponent implements OnInit, OnDestroy {
 
   private buildFormData(): FormData {
     const fd = new FormData();
-    const v = this.editForm.getRawValue();
+    const v = this.createForm.getRawValue();
 
-    // Laravel cần _method=PUT cho multipart form
-    fd.append('_method', 'PUT');
     fd.append('name', v.name ?? '');
     if (v.name_alt) fd.append('name_alt', v.name_alt);
     if (v.pilot) fd.append('pilot', v.pilot);
@@ -391,123 +271,15 @@ export class MangaEditComponent implements OnInit, OnDestroy {
     if (v.user_id) fd.append('user_id', v.user_id);
     if (v.finished_by) fd.append('finished_by', v.finished_by);
 
-    // Genres — gửi dạng genres[]=1&genres[]=2
     for (const gId of this.selectedGenreIds()) {
       fd.append('genres[]', String(gId));
     }
 
-    // Cover file (chỉ gửi khi user chọn ảnh mới)
     if (this.coverFile) {
       fd.append('cover', this.coverFile);
     }
 
     return fd;
-  }
-
-  // ========== CHAPTERS ==========
-
-  loadChapters(): void {
-    this.chaptersLoading.set(true);
-    this.chaptersService
-      .getChapters(this.mangaId(), {
-        page: this.chaptersPageIndex(),
-        per_page: this.chaptersPageSize(),
-        sort: '-created_at',
-      })
-      .subscribe({
-        next: (res) => {
-          this.chapters.set(res.data ?? []);
-          this.chaptersTotal.set(res.pagination?.total ?? 0);
-          this.chaptersLoading.set(false);
-          this.checkedChapterIds.set(new Set());
-          this.allChaptersChecked.set(false);
-        },
-        error: () => {
-          this.chapters.set([]);
-          this.message.error('Không thể tải danh sách chương');
-          this.chaptersLoading.set(false);
-        },
-      });
-  }
-
-  onChaptersPageChange(page: number): void {
-    this.chaptersPageIndex.set(page);
-    this.loadChapters();
-  }
-
-  onChaptersPageSizeChange(size: number): void {
-    this.chaptersPageSize.set(size);
-    this.chaptersPageIndex.set(1);
-    this.loadChapters();
-  }
-
-  // --- Chapter checkbox ---
-  onAllChaptersChecked(checked: boolean): void {
-    this.allChaptersChecked.set(checked);
-    if (checked) {
-      this.checkedChapterIds.set(new Set(this.chapters().map((c) => c.id)));
-    } else {
-      this.checkedChapterIds.set(new Set());
-    }
-  }
-
-  onChapterChecked(id: string, checked: boolean): void {
-    const set = new Set(this.checkedChapterIds());
-    if (checked) {
-      set.add(id);
-    } else {
-      set.delete(id);
-    }
-    this.checkedChapterIds.set(set);
-    this.allChaptersChecked.set(set.size === this.chapters().length && this.chapters().length > 0);
-  }
-
-  isChapterChecked(id: string): boolean {
-    return this.checkedChapterIds().has(id);
-  }
-
-  get hasCheckedChapters(): boolean {
-    return this.checkedChapterIds().size > 0;
-  }
-
-  // --- Chapter navigation ---
-  onNavigateCreateChapter(): void {
-    this.router.navigate(['/manga', this.mangaId(), 'chapters', 'create']);
-  }
-
-  onNavigateEditChapter(chapter: Chapter): void {
-    this.router.navigate(['/manga', this.mangaId(), 'chapters', chapter.id, 'edit']);
-  }
-
-  onDeleteChapter(chapter: Chapter): void {
-    this.chaptersService.deleteChapter(this.mangaId(), chapter.id).subscribe({
-      next: () => {
-        this.message.success(`Đã xoá chương "${chapter.name}"`);
-        this.loadChapters();
-      },
-      error: () => this.message.error('Xoá chương thất bại'),
-    });
-  }
-
-  onBulkDeleteChapters(): void {
-    const ids = [...this.checkedChapterIds()];
-    if (!ids.length) return;
-
-    this.modal.confirm({
-      nzTitle: `Xoá ${ids.length} chương đã chọn?`,
-      nzContent: 'Hành động này không thể hoàn tác.',
-      nzOkDanger: true,
-      nzOkText: 'Xoá',
-      nzOnOk: () => {
-        this.chaptersService.deleteChaptersBulk(this.mangaId(), ids).subscribe({
-          next: () => {
-            this.message.success(`Đã xoá ${ids.length} chương`);
-            this.loadChapters();
-          },
-          error: () => this.message.error('Xoá chương thất bại'),
-        });
-      },
-    });
   }
 
   // ========== NAVIGATION ==========
@@ -516,4 +288,3 @@ export class MangaEditComponent implements OnInit, OnDestroy {
     this.router.navigate(['/manga/list']);
   }
 }
-

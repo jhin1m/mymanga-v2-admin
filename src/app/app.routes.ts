@@ -33,6 +33,28 @@ export const routes: Routes = [
           import('./pages/doujinshis/doujinshis').then((m) => m.DoujinshisComponent),
       },
       {
+        path: 'genres',
+        loadComponent: () => import('./pages/genres/genres').then((m) => m.GenresComponent),
+      },
+      {
+        path: 'groups',
+        loadComponent: () => import('./pages/groups/groups').then((m) => m.GroupsComponent),
+      },
+      {
+        path: 'badges',
+        loadComponent: () =>
+          import('./pages/achievements/achievements').then((m) => m.AchievementsComponent),
+      },
+      {
+        path: 'pets',
+        loadComponent: () => import('./pages/pets/pets').then((m) => m.PetsComponent),
+      },
+      {
+        path: 'comments',
+        loadComponent: () =>
+          import('./pages/comments/comments').then((m) => m.CommentsComponent),
+      },
+      {
         path: 'manga',
         children: [
           {
@@ -41,9 +63,24 @@ export const routes: Routes = [
               import('./pages/manga-list/manga-list').then((m) => m.MangaListComponent),
           },
           {
+            path: 'create',
+            loadComponent: () =>
+              import('./pages/manga-create/manga-create').then((m) => m.MangaCreateComponent),
+          },
+          {
             path: 'edit/:id',
             loadComponent: () =>
               import('./pages/manga-edit/manga-edit').then((m) => m.MangaEditComponent),
+          },
+          {
+            path: ':mangaId/chapters/create',
+            loadComponent: () =>
+              import('./pages/chapter-create/chapter-create').then((m) => m.ChapterCreateComponent),
+          },
+          {
+            path: ':mangaId/chapters/:chapterId/edit',
+            loadComponent: () =>
+              import('./pages/chapter-edit/chapter-edit').then((m) => m.ChapterEditComponent),
           },
           { path: '', redirectTo: 'list', pathMatch: 'full' },
         ],

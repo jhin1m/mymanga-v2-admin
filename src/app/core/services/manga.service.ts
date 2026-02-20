@@ -91,6 +91,11 @@ export class MangaService {
     });
   }
 
+  /** Tạo manga mới — gửi FormData vì có file cover */
+  createManga(formData: FormData): Observable<ApiResponse<Manga>> {
+    return this.http.post<ApiResponse<Manga>>(this.apiBase, formData);
+  }
+
   /** Cập nhật manga — gửi FormData vì có file cover */
   updateManga(id: string, formData: FormData): Observable<ApiResponse<Manga>> {
     return this.http.post<ApiResponse<Manga>>(`${this.apiBase}/${id}`, formData);

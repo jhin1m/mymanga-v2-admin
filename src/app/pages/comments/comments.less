@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  padding: 24px;
+}
+
+.search-actions {
+  display: flex;
+  gap: 8px;
+}
+
+::ng-deep nz-form-item {
+  margin-bottom: 0;
+}
+
+.table-card {
+  margin-top: 16px;
+
+  ::ng-deep .ant-card-body {
+    padding: 0;
+  }
+
+  app-pagination-bar {
+    display: block;
+    padding: 12px 16px;
+  }
+}
+
+.comment-content {
+  max-width: 500px;
+  max-height: 200px;
+  overflow: auto;
+  word-break: break-word;
+
+  // Bỏ margin mặc định của <p> trong comment
+  p {
+    margin: 0;
+  }
+
+  // Ảnh trong comment render ở size cố định
+  img {
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+    margin: 4px 0;
+  }
+}
+
+.text-muted {
+  opacity: 0.65;
+}

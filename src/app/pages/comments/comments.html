@@ -1,0 +1,104 @@
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Tìm kiếm Bình luận" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <div nz-col [nzXs]="24" [nzSm]="24" [nzMd]="24">
+        <nz-form-item>
+          <nz-form-label>Tên người dùng</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="username" placeholder="Nhập tên người dùng" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Comments Table -->
+<nz-card class="table-card">
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="bình luận"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <nz-table
+    #commentTable
+    [nzData]="comments()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzShowPagination]="false"
+    [nzScroll]="{ x: '900px' }"
+    nzSize="middle"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="60px" nzAlign="center">Avatar</th>
+        <th nzWidth="150px">Tạo bởi</th>
+        <th>Nội dung</th>
+        <th nzWidth="160px">Tạo lúc</th>
+        <th nzWidth="100px" nzAlign="center" nzRight>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (comment of commentTable.data; track comment.id) {
+        <tr>
+          <td nzAlign="center">
+            <nz-avatar
+              [nzSrc]="comment.user?.avatar_full_url || undefined"
+              nzIcon="user"
+              [nzSize]="32"
+            />
+          </td>
+          <td>{{ comment.user?.name ?? 'Ẩn danh' }}</td>
+          <td>
+            <div class="comment-content" [innerHTML]="comment.content"></div>
+          </td>
+          <td class="text-muted">{{ comment.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td nzAlign="center" nzRight>
+            <button
+              nz-button
+              nzDanger
+              nzSize="small"
+              nz-popconfirm
+              nzPopconfirmTitle="Xóa bình luận này?"
+              (nzOnConfirm)="onDeleteComment(comment)"
+              title="Xóa"
+            >
+              <nz-icon nzType="delete" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  @if (comments().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      totalLabel="bình luận"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</nz-card>

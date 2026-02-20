@@ -1,0 +1,109 @@
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Tìm kiếm Danh hiệu" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <div nz-col [nzXs]="24" [nzSm]="24" [nzMd]="24">
+        <nz-form-item>
+          <nz-form-label>Tên</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="name" placeholder="Nhập tên danh hiệu" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onCreateAchievement()">
+        <nz-icon nzType="plus" />
+        Tạo mới
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Achievements Table -->
+<nz-card class="table-card">
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="danh hiệu"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <nz-table
+    #achievementTable
+    [nzData]="achievements()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzShowPagination]="false"
+    [nzScroll]="{ x: '700px' }"
+    nzSize="middle"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="80px" nzAlign="center">ID</th>
+        <th nzWidth="250px">Tên</th>
+        <th nzWidth="180px">Ngày tạo</th>
+        <th nzWidth="120px" nzAlign="center" nzRight>Hành động</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (achievement of achievementTable.data; track achievement.id) {
+        <tr>
+          <td nzAlign="center">{{ achievement.id }}</td>
+          <td>
+            <span class="achievement-name">{{ achievement.name }}</span>
+          </td>
+          <td class="text-muted">{{ achievement.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td nzAlign="center" nzRight>
+            <div class="action-buttons">
+              <button
+                nz-button
+                nzSize="small"
+                (click)="onEditAchievement(achievement)"
+                title="Sửa"
+              >
+                <nz-icon nzType="edit" />
+              </button>
+              <button
+                nz-button
+                nzDanger
+                nzSize="small"
+                nz-popconfirm
+                [nzPopconfirmTitle]="'Xóa danh hiệu \'' + achievement.name + '\'?'"
+                (nzOnConfirm)="onDeleteAchievement(achievement)"
+                title="Xóa"
+              >
+                <nz-icon nzType="delete" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  @if (achievements().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</nz-card>

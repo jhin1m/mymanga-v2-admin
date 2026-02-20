@@ -15,6 +15,20 @@ export interface Chapter {
   updated_at: string;
 }
 
+/** Hình ảnh thuộc chapter */
+export interface ChapterImage {
+  id: string;
+  image_full_url: string;
+  order: number;
+}
+
+/** Chi tiết chapter kèm danh sách hình */
+export interface ChapterDetail extends Chapter {
+  /** API trả về mảng URL string trong field "content" */
+  content?: string[];
+  images?: ChapterImage[];
+}
+
 export interface ChapterListParams {
   page?: number;
   per_page?: number;
@@ -26,6 +40,7 @@ export interface ChapterListParams {
 export interface ChapterPayload {
   name: string;
   order?: number;
+  image_urls?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -62,5 +77,23 @@ export class ChaptersService {
   /** Xoá nhiều chapters cùng lúc */
   deleteChaptersBulk(mangaId: string, chapterIds: string[]): Observable<void> {
     return this.http.post<void>(`${this.apiBase}/bulk-delete`, { ids: chapterIds });
+  }
+
+  /** Lấy chi tiết 1 chapter (kèm images) */
+  getChapter(id: string): Observable<ApiResponse<ChapterDetail>> {
+    return this.http.get<ApiResponse<ChapterDetail>>(`${this.apiBase}/${id}`);
+  }
+
+  /** Upload 1 hình vào chapter (POST + _method=put — Laravel method spoofing cho multipart) */
+  addImage(chapterId: string, file: File): Observable<ApiResponse<unknown>> {
+    const fd = new FormData();
+    fd.append('_method', 'put');
+    fd.append('image', file);
+    return this.http.post<ApiResponse<unknown>>(`${this.apiBase}/${chapterId}/add-img`, fd);
+  }
+
+  /** Xoá tất cả hình trong chapter */
+  clearImages(chapterId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiBase}/${chapterId}/clr-img`);
   }
 }

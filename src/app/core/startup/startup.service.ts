@@ -66,7 +66,7 @@ export class StartupService {
           },
           {
             text: 'Thể loại',
-            link: '/categories',
+            link: '/genres',
             icon: { type: 'icon', value: 'tags' },
           },
         ],
@@ -85,17 +85,17 @@ export class StartupService {
             link: '/badges',
             icon: { type: 'icon', value: 'trophy' },
           },
+          {
+            text: 'Bạn đồng hành',
+            link: '/pets',
+            icon: { type: 'icon', value: 'smile' },
+          },
         ],
       },
       {
         group: true,
         text: 'HỆ THỐNG',
         children: [
-          {
-            text: 'Bạn đồng hành',
-            link: '/history',
-            icon: { type: 'icon', value: 'history' },
-          },
           {
             text: 'Bình luận',
             link: '/comments',
