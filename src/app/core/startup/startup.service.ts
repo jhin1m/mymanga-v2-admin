@@ -102,6 +102,11 @@ export class StartupService {
             icon: { type: 'icon', value: 'message' },
           },
           {
+            text: 'Báo cáo Chapter',
+            link: '/chapter-reports',
+            icon: { type: 'icon', value: 'warning' },
+          },
+          {
             text: 'Thông báo',
             link: '/notifications',
             icon: { type: 'icon', value: 'notification' },

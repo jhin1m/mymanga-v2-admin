@@ -55,6 +55,13 @@ export const routes: Routes = [
           import('./pages/comments/comments').then((m) => m.CommentsComponent),
       },
       {
+        path: 'chapter-reports',
+        loadComponent: () =>
+          import('./pages/chapter-reports/chapter-reports').then(
+            (m) => m.ChapterReportsComponent
+          ),
+      },
+      {
         path: 'manga',
         children: [
           {

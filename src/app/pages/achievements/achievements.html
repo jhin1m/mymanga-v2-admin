@@ -54,8 +54,8 @@
   >
     <thead>
       <tr>
-        <th nzWidth="80px" nzAlign="center">ID</th>
-        <th nzWidth="250px">Tên</th>
+        <th nzWidth="250px">Xem trước</th>
+        <th nzWidth="120px" nzAlign="center">Điểm</th>
         <th nzWidth="180px">Ngày tạo</th>
         <th nzWidth="120px" nzAlign="center" nzRight>Hành động</th>
       </tr>
@@ -63,10 +63,20 @@
     <tbody>
       @for (achievement of achievementTable.data; track achievement.id) {
         <tr>
-          <td nzAlign="center">{{ achievement.id }}</td>
           <td>
-            <span class="achievement-name">{{ achievement.name }}</span>
+            <span
+              class="achievement-badge"
+              [style.font-family]="achievement.font_family"
+              [style.font-size.px]="achievement.font_size"
+              [style.color]="achievement.color"
+              [style.font-weight]="achievement.weight"
+              [style.font-style]="achievement.font_style"
+              [style.text-shadow]="achievement.text_shadow"
+            >
+              {{ achievement.name }}
+            </span>
           </td>
+          <td nzAlign="center">{{ achievement.required_points | number }}</td>
           <td class="text-muted">{{ achievement.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
           <td nzAlign="center" nzRight>
             <div class="action-buttons">

@@ -9,6 +9,13 @@ import { PaginatedResponse } from '../models/api-types';
 export interface Achievement {
   id: string;
   name: string;
+  font_family: string;
+  font_size: string;
+  color: string;
+  weight: string;
+  font_style: string;
+  text_shadow: string;
+  required_points: number;
   user_id: string;
   user?: { id: string; name: string };
   created_at: string;
@@ -28,6 +35,13 @@ export interface AchievementListParams {
 /** Payload khi tạo/sửa achievement */
 export interface AchievementPayload {
   name: string;
+  font_family: string;
+  font_size: string;
+  color: string;
+  weight: string;
+  font_style: string;
+  text_shadow: string;
+  required_points: number;
 }
 
 @Injectable({ providedIn: 'root' })

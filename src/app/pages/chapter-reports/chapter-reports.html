@@ -1,0 +1,185 @@
+<!-- Statistics Cards -->
+@if (statistics(); as stats) {
+  <div nz-row [nzGutter]="16" class="stats-row">
+    <div nz-col [nzXs]="12" [nzSm]="6">
+      <nz-card>
+        <nz-statistic nzTitle="Tổng báo cáo" [nzValue]="stats.total" [nzValueStyle]="{ color: '#cf1322' }">
+          <ng-template #nzPrefix><nz-icon nzType="warning" /></ng-template>
+        </nz-statistic>
+      </nz-card>
+    </div>
+    <div nz-col [nzXs]="12" [nzSm]="6">
+      <nz-card>
+        <nz-statistic nzTitle="Hôm nay" [nzValue]="stats.today_reports" [nzValueStyle]="{ color: '#fa8c16' }">
+          <ng-template #nzPrefix><nz-icon nzType="clock-circle" /></ng-template>
+        </nz-statistic>
+      </nz-card>
+    </div>
+    <div nz-col [nzXs]="12" [nzSm]="6">
+      <nz-card>
+        <nz-statistic nzTitle="Gần đây" [nzValue]="stats.recent_reports" [nzValueStyle]="{ color: '#1890ff' }">
+          <ng-template #nzPrefix><nz-icon nzType="rise" /></ng-template>
+        </nz-statistic>
+      </nz-card>
+    </div>
+    <div nz-col [nzXs]="12" [nzSm]="6">
+      <nz-card>
+        <nz-statistic
+          nzTitle="Ảnh lỗi"
+          [nzValue]="stats.by_type['broken_images'] ?? 0"
+          [nzValueStyle]="{ color: '#cf1322' }"
+        >
+          <ng-template #nzPrefix><nz-icon nzType="picture" /></ng-template>
+        </nz-statistic>
+      </nz-card>
+    </div>
+  </div>
+}
+
+<!-- Search/Filter Section -->
+<nz-card nzTitle="Lọc báo cáo" [nzExtra]="searchExtra">
+  <form nz-form [formGroup]="searchForm" (ngSubmit)="onSearch()" nzLayout="vertical">
+    <div nz-row [nzGutter]="[16, 0]">
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8">
+        <nz-form-item>
+          <nz-form-label>Loại báo cáo</nz-form-label>
+          <nz-form-control>
+            <nz-select
+              formControlName="report_type"
+              nzPlaceHolder="Tất cả loại"
+              nzAllowClear
+            >
+              @for (opt of reportTypeOptions; track opt.value) {
+                <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #searchExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" (click)="onReset()" type="button">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Tìm kiếm
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Reports Table -->
+<nz-card class="table-card">
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="báo cáo"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <!-- Bulk actions bar — chỉ hiện khi có chọn item -->
+  @if (hasChecked()) {
+    <div class="bulk-actions">
+      <span>Đã chọn {{ checkedIds().size }} báo cáo</span>
+      <button
+        nz-button
+        nzDanger
+        nzSize="small"
+        nz-popconfirm
+        [nzPopconfirmTitle]="'Xóa ' + checkedIds().size + ' báo cáo đã chọn?'"
+        (nzOnConfirm)="onBulkDelete()"
+      >
+        <nz-icon nzType="delete" />
+        Xóa đã chọn
+      </button>
+    </div>
+  }
+
+  <nz-table
+    #reportTable
+    [nzData]="reports()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzShowPagination]="false"
+    [nzScroll]="{ x: '1100px' }"
+    nzSize="middle"
+  >
+    <thead>
+      <tr>
+        <th
+          nzWidth="50px"
+          nzAlign="center"
+          [nzChecked]="allChecked()"
+          (nzCheckedChange)="onAllChecked($event)"
+        ></th>
+        <th nzWidth="140px">Loại</th>
+        <th nzWidth="180px">Manga</th>
+        <th nzWidth="140px">Chapter</th>
+        <th nzWidth="130px">Người báo cáo</th>
+        <th>Mô tả</th>
+        <th nzWidth="150px">Ngày tạo</th>
+        <th nzWidth="80px" nzAlign="center" nzRight>Xóa</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (report of reportTable.data; track report.id) {
+        <tr>
+          <td
+            nzAlign="center"
+            [nzChecked]="checkedIds().has(report.id)"
+            (nzCheckedChange)="onItemChecked(report.id, $event)"
+          ></td>
+          <td>
+            <nz-tag [nzColor]="getReportTypeColor(report.report_type)">
+              {{ getReportTypeLabel(report.report_type) }}
+            </nz-tag>
+          </td>
+          <td>
+            <span nz-tooltip [nzTooltipTitle]="report.manga?.name">
+              {{ report.manga?.name ?? '—' }}
+            </span>
+          </td>
+          <td>{{ report.chapter?.name ?? '—' }}</td>
+          <td>{{ report.user?.name ?? 'Ẩn danh' }}</td>
+          <td>
+            <div class="description-cell">{{ report.description || '—' }}</div>
+          </td>
+          <td class="text-muted">{{ report.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td nzAlign="center" nzRight>
+            <button
+              nz-button
+              nzDanger
+              nzSize="small"
+              nz-popconfirm
+              nzPopconfirmTitle="Xóa báo cáo này?"
+              (nzOnConfirm)="onDeleteReport(report)"
+              title="Xóa"
+            >
+              <nz-icon nzType="delete" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  @if (reports().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      totalLabel="báo cáo"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</nz-card>

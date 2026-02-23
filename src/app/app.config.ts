@@ -35,6 +35,10 @@ import {
   UploadOutline,
   ExclamationCircleOutline,
   SmileOutline,
+  WarningOutline,
+  ClockCircleOutline,
+  RiseOutline,
+  PictureOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { registerLocaleData } from '@angular/common';
@@ -81,6 +85,10 @@ const icons = [
   UploadOutline,
   ExclamationCircleOutline,
   SmileOutline,
+  WarningOutline,
+  ClockCircleOutline,
+  RiseOutline,
+  PictureOutline,
 ];
 
 // Factory function for APP_INITIALIZER

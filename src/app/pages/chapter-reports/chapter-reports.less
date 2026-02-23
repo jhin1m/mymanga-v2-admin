@@ -3,6 +3,10 @@
   padding: 24px;
 }
 
+.stats-row {
+  margin-bottom: 16px;
+}
+
 .search-actions {
   display: flex;
   gap: 8px;
@@ -25,16 +29,21 @@
   }
 }
 
-.achievement-badge {
-  display: inline-block;
-  line-height: 1.4;
+.bulk-actions {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.description-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .text-muted {
   opacity: 0.65;
-}
-
-.action-buttons {
-  display: inline-flex;
-  gap: 8px;
 }
