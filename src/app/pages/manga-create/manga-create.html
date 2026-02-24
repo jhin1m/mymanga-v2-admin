@@ -139,13 +139,33 @@
           </nz-form-control>
         </nz-form-item>
 
-        <!-- Tác giả -->
+        <!-- Tác giả (Author) -->
         <nz-form-item>
           <nz-form-label [nzSpan]="24">Tác giả</nz-form-label>
           <nz-form-control [nzSpan]="24">
             <nz-select
-              formControlName="artist_id"
+              formControlName="author_id"
               nzPlaceHolder="Tìm tác giả từ 2 ký tự"
+              nzShowSearch
+              nzServerSearch
+              nzAllowClear
+              [nzLoading]="authorLoading()"
+              (nzOnSearch)="onAuthorSearch($event)"
+            >
+              @for (a of authorOptions(); track a.id) {
+                <nz-option [nzValue]="a.id" [nzLabel]="a.name" />
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <!-- Hoạ sĩ (Artist) -->
+        <nz-form-item>
+          <nz-form-label [nzSpan]="24">Hoạ sĩ</nz-form-label>
+          <nz-form-control [nzSpan]="24">
+            <nz-select
+              formControlName="artist_id"
+              nzPlaceHolder="Tìm hoạ sĩ từ 2 ký tự"
               nzShowSearch
               nzServerSearch
               nzAllowClear

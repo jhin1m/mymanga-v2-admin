@@ -60,6 +60,11 @@ export class StartupService {
             icon: { type: 'icon', value: 'team' },
           },
           {
+            text: 'Author',
+            link: '/authors',
+            icon: { type: 'icon', value: 'user' },
+          },
+          {
             text: 'Doujinshi',
             link: '/doujinshi',
             icon: { type: 'icon', value: 'file' },

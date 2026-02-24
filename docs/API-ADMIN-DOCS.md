@@ -273,11 +273,12 @@ List mangas
 - `filter[group_id]` (uuid): Filter by group
 - `filter[user_id]` (uuid): Filter by uploader
 - `filter[artist_id]` (uuid): Filter by artist
+- `filter[author_id]` (uuid): Filter by author
 - `filter[is_reviewed]` (boolean): Filter by review status
 - `filter[search]` (string): Search scope
 - `filter[accept_genres]` (array): Filter by included genres
 - `filter[reject_genres]` (array): Filter by excluded genres
-- `include` (string): Relationships to include (`genres`, `latest_chapter`, `first_chapter`, `user`, `artist`, `group`, etc.)
+- `include` (string): Relationships to include (`genres`, `latest_chapter`, `first_chapter`, `user`, `artist`, `author`, `group`, etc.)
 
 
 **Response**:
@@ -312,6 +313,7 @@ Create new manga
   "name": "Manga Title",
   "name_alt": "Alternative Title",
   "artist_id": "uuid-artist",
+  "author_id": "uuid-author",
   "doujinshi_id": "uuid-doujinshi",
   "group_id": "uuid-group",
   "status": "ongoing",
@@ -323,6 +325,7 @@ Create new manga
 **Validation Rules**:
 - `name`: required, string, max:255
 - `artist_id`: exists:artists,id
+- `author_id`: exists:authors,id
 - `doujinshi_id`: exists:doujinshis,id
 - `group_id`: exists:groups,id
 - `cover`: file, mimes:jpg,png,webp, max:2048KB
@@ -504,6 +507,66 @@ Update artist
 
 ### DELETE /api/admin/artists/{id}
 Delete artist
+
+## Author Management
+
+**Permissions**: Admin or owner for update/delete
+
+### GET /api/admin/authors
+List authors
+
+**Query Parameters**: Standard pagination and filtering
+- `filter[id]`: Filter by ID
+- `filter[name]`: Filter by name
+- `include`: `user`
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid-123",
+      "name": "Author Name",
+      "created_at": "2024-01-01T00:00:00.000000Z"
+    }
+  ]
+}
+```
+
+### GET /api/admin/authors/{id}
+Get author details
+
+### POST /api/admin/authors
+Create author
+
+**Request**:
+```json
+{
+  "name": "Author Name"
+}
+```
+
+**Validation Rules**:
+- `name`: required, string, max:50
+
+### PUT /api/admin/authors/{id}
+Update author
+
+**Request**:
+```json
+{
+  "name": "Updated Author Name",
+  "user_id": "uuid-user"
+}
+```
+
+**Validation Rules**:
+- `name`: filled, string, max:50
+- `user_id`: filled, uuid, exists:users,id
+
+### DELETE /api/admin/authors/{id}
+Delete author
 
 ## Group Management
 

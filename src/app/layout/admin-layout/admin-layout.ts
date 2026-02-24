@@ -31,8 +31,8 @@ export class AdminLayoutComponent {
   private readonly layoutService = inject(LayoutDefaultService);
 
   protected readonly layoutOptions = {
-    logoLink: '/dashboard',
-    logoFixWidth: 200,
+    logoHidden: true,
+    logoFixWidth: 0,
     showHeaderCollapse: false,
   };
 

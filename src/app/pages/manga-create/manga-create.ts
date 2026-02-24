@@ -19,6 +19,7 @@ import { Editor, NgxEditorModule, Toolbar } from 'ngx-editor';
 import { MangaService } from '../../core/services/manga.service';
 import { GenreSimple, GenresService } from '../../core/services/genres.service';
 import { ArtistsService, Artist } from '../../core/services/artists.service';
+import { AuthorsService, Author } from '../../core/services/authors.service';
 import { GroupsService, Group } from '../../core/services/groups.service';
 import { DoujinshisService, Doujinshi } from '../../core/services/doujinshis.service';
 import { MembersService, Member } from '../../core/services/members.service';
@@ -49,6 +50,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
   private readonly mangaService = inject(MangaService);
   private readonly genresService = inject(GenresService);
   private readonly artistsService = inject(ArtistsService);
+  private readonly authorsService = inject(AuthorsService);
   private readonly groupsService = inject(GroupsService);
   private readonly doujinshisService = inject(DoujinshisService);
   private readonly membersService = inject(MembersService);
@@ -61,10 +63,12 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
   protected readonly selectedGenreIds = signal<number[]>([]);
 
   // Dropdown options (loaded via search)
+  protected readonly authorOptions = signal<Author[]>([]);
   protected readonly artistOptions = signal<Artist[]>([]);
   protected readonly groupOptions = signal<Group[]>([]);
   protected readonly doujinshiOptions = signal<Doujinshi[]>([]);
   protected readonly userOptions = signal<Member[]>([]);
+  protected readonly authorLoading = signal(false);
   protected readonly artistLoading = signal(false);
   protected readonly groupLoading = signal(false);
   protected readonly doujinshiLoading = signal(false);
@@ -75,6 +79,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
   protected readonly coverPreviewUrl = signal<string>('');
 
   // Search subjects
+  private readonly authorSearch$ = new Subject<string>();
   private readonly artistSearch$ = new Subject<string>();
   private readonly groupSearch$ = new Subject<string>();
   private readonly doujinshiSearch$ = new Subject<string>();
@@ -87,6 +92,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
     pilot: [''],
     status: [2],
     is_hot: [false],
+    author_id: [''],
     artist_id: [''],
     group_id: [''],
     doujinshi_id: [''],
@@ -131,6 +137,18 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
   // ========== SEARCH DROPDOWNS ==========
 
   private setupSearchStreams(): void {
+    this.authorSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
+      if (term.length < 2) return;
+      this.authorLoading.set(true);
+      this.authorsService.getAuthors({ 'filter[name]': term, per_page: 20 }).subscribe({
+        next: (res) => {
+          this.authorOptions.set(res.data ?? []);
+          this.authorLoading.set(false);
+        },
+        error: () => this.authorLoading.set(false),
+      });
+    });
+
     this.artistSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((term) => {
       if (term.length < 2) return;
       this.artistLoading.set(true);
@@ -178,6 +196,10 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
         error: () => this.userLoading.set(false),
       });
     });
+  }
+
+  onAuthorSearch(term: string): void {
+    this.authorSearch$.next(term);
   }
 
   onArtistSearch(term: string): void {
@@ -265,6 +287,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
     if (v.pilot) fd.append('pilot', v.pilot);
     fd.append('status', String(v.status));
     fd.append('is_hot', v.is_hot ? '1' : '0');
+    if (v.author_id) fd.append('author_id', v.author_id);
     if (v.artist_id) fd.append('artist_id', v.artist_id);
     if (v.group_id) fd.append('group_id', v.group_id);
     if (v.doujinshi_id) fd.append('doujinshi_id', v.doujinshi_id);

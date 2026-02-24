@@ -42,6 +42,7 @@ export interface Manga {
   created_at: string;
   updated_at: string;
   user?: MangaUser;
+  author?: MangaRelation | null;
   artist?: MangaRelation | null;
   group?: MangaRelation | null;
   doujinshi?: MangaRelation | null;
@@ -87,7 +88,7 @@ export class MangaService {
   /** Lấy chi tiết 1 manga theo UUID */
   getManga(id: string): Observable<ApiResponse<Manga>> {
     return this.http.get<ApiResponse<Manga>>(`${this.apiBase}/${id}`, {
-      params: { include: 'user,genres,artist,group,doujinshi' },
+      params: { include: 'user,genres,author,artist,group,doujinshi' },
     });
   }
 

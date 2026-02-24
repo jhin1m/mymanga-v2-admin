@@ -28,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/artists/artists').then((m) => m.ArtistsComponent),
       },
       {
+        path: 'authors',
+        loadComponent: () => import('./pages/authors/authors').then((m) => m.AuthorsComponent),
+      },
+      {
         path: 'doujinshi',
         loadComponent: () =>
           import('./pages/doujinshis/doujinshis').then((m) => m.DoujinshisComponent),
