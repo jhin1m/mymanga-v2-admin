@@ -26,7 +26,7 @@
       <nz-card>
         <nz-statistic
           nzTitle="Ảnh lỗi"
-          [nzValue]="stats.by_type['broken_images'] ?? 0"
+          [nzValue]="stats.by_type['broken_images']"
           [nzValueStyle]="{ color: '#cf1322' }"
         >
           <ng-template #nzPrefix><nz-icon nzType="picture" /></ng-template>

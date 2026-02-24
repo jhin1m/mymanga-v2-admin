@@ -76,6 +76,38 @@
   gap: 8px;
 }
 
+// --- Drag-drop reorder ---
+.drag-handle {
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// CDK drag-drop — dòng đang kéo
+.cdk-drag-preview {
+  display: table;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+
+  td {
+    padding: 8px 12px;
+  }
+}
+
+// CDK drag-drop — placeholder khi kéo
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 200ms ease;
+}
+
 // --- Form spacing ---
 ::ng-deep nz-form-item {
   margin-bottom: 12px;

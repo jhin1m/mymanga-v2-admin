@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -53,6 +54,9 @@ import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-b
     NzPopconfirmModule,
     NzTooltipModule,
     NgxEditorModule,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
     PaginationBarComponent,
   ],
   templateUrl: './manga-edit.html',
@@ -104,6 +108,11 @@ export class MangaEditComponent implements OnInit, OnDestroy {
   protected readonly chaptersPageSize = signal(20);
   protected readonly checkedChapterIds = signal<Set<string>>(new Set());
   protected readonly allChaptersChecked = signal(false);
+
+  // Chapter reorder (drag-drop)
+  protected readonly orderChanged = signal(false);
+  protected readonly savingOrder = signal(false);
+  private originalChapters: Chapter[] = [];
 
   // Search subjects for server-search dropdowns
   private readonly artistSearch$ = new Subject<string>();
@@ -412,15 +421,18 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       .getChapters(this.mangaId(), {
         page: this.chaptersPageIndex(),
         per_page: this.chaptersPageSize(),
-        sort: '-created_at',
+        sort: 'order',
       })
       .subscribe({
         next: (res) => {
-          this.chapters.set(res.data ?? []);
+          const data = res.data ?? [];
+          this.chapters.set(data);
+          this.originalChapters = data.map((c) => ({ ...c }));
           this.chaptersTotal.set(res.pagination?.total ?? 0);
           this.chaptersLoading.set(false);
           this.checkedChapterIds.set(new Set());
           this.allChaptersChecked.set(false);
+          this.orderChanged.set(false);
         },
         error: () => {
           this.chapters.set([]);
@@ -487,6 +499,36 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       },
       error: () => this.message.error('Xoá chương thất bại'),
     });
+  }
+
+  // --- Chapter drag-drop reorder ---
+  onChapterDrop(event: CdkDragDrop<Chapter[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    const list = [...this.chapters()];
+    moveItemInArray(list, event.previousIndex, event.currentIndex);
+    this.chapters.set(list);
+    this.orderChanged.set(true);
+  }
+
+  onSaveChapterOrder(): void {
+    const chaptersOrder = this.chapters().map((c, i) => ({ id: c.id, order: i + 1 }));
+    this.savingOrder.set(true);
+    this.chaptersService.updateChaptersOrder(chaptersOrder).subscribe({
+      next: () => {
+        this.message.success('Đã cập nhật thứ tự chương');
+        this.savingOrder.set(false);
+        this.loadChapters();
+      },
+      error: () => {
+        this.message.error('Cập nhật thứ tự thất bại');
+        this.savingOrder.set(false);
+      },
+    });
+  }
+
+  onResetChapterOrder(): void {
+    this.chapters.set(this.originalChapters.map((c) => ({ ...c })));
+    this.orderChanged.set(false);
   }
 
   onBulkDeleteChapters(): void {

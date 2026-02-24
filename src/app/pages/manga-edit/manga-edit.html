@@ -215,6 +215,21 @@
     >
       <ng-template #chapterActions>
         <div class="chapter-actions">
+          @if (orderChanged()) {
+            <button
+              nz-button
+              nzType="primary"
+              nzSize="small"
+              [nzLoading]="savingOrder()"
+              (click)="onSaveChapterOrder()"
+            >
+              <nz-icon nzType="save" />
+              Lưu thứ tự
+            </button>
+            <button nz-button nzSize="small" (click)="onResetChapterOrder()">
+              Huỷ
+            </button>
+          }
           @if (hasCheckedChapters) {
             <button
               nz-button
@@ -255,24 +270,30 @@
       >
         <thead>
           <tr>
+            <th nzWidth="40px"></th>
             <th
               nzWidth="40px"
               [nzChecked]="allChaptersChecked()"
               (nzCheckedChange)="onAllChaptersChecked($event)"
             ></th>
             <th>Tên chương</th>
+            <th nzWidth="80px" nzAlign="center">Thứ tự</th>
             <th nzWidth="120px">Ngày tạo</th>
             <th nzWidth="100px" nzAlign="center">Thao tác</th>
           </tr>
         </thead>
-        <tbody>
-          @for (chapter of chapters(); track chapter.id) {
-            <tr>
+        <tbody cdkDropList (cdkDropListDropped)="onChapterDrop($event)">
+          @for (chapter of chapters(); track chapter.id; let i = $index) {
+            <tr cdkDrag>
+              <td class="drag-handle" cdkDragHandle>
+                <nz-icon nzType="holder" />
+              </td>
               <td
                 [nzChecked]="isChapterChecked(chapter.id)"
                 (nzCheckedChange)="onChapterChecked(chapter.id, $event)"
               ></td>
               <td>{{ chapter.name }}</td>
+              <td nzAlign="center">{{ i + 1 }}</td>
               <td>{{ chapter.created_at | date: 'dd/MM/yyyy' }}</td>
               <td nzAlign="center">
                 <button

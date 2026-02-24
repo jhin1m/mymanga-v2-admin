@@ -74,9 +74,16 @@ export class ChaptersService {
     return this.http.delete<void>(`${this.apiBase}/${chapterId}`);
   }
 
-  /** Xoá nhiều chapters cùng lúc */
+  /** Xoá nhiều chapters cùng lúc — PUT /api/admin/chapters/delete-many */
   deleteChaptersBulk(mangaId: string, chapterIds: string[]): Observable<void> {
-    return this.http.post<void>(`${this.apiBase}/bulk-delete`, { ids: chapterIds });
+    return this.http.put<void>(`${this.apiBase}/delete-many`, { ids: chapterIds });
+  }
+
+  /** Cập nhật thứ tự chapters — PUT /api/admin/chapters/chapters-order */
+  updateChaptersOrder(chaptersOrder: { id: string; order: number }[]): Observable<ApiResponse<unknown>> {
+    return this.http.put<ApiResponse<unknown>>(`${this.apiBase}/chapters-order`, {
+      chapters_order: chaptersOrder,
+    });
   }
 
   /** Lấy chi tiết 1 chapter (kèm images) */

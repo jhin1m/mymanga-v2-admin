@@ -39,6 +39,7 @@ import {
   ClockCircleOutline,
   RiseOutline,
   PictureOutline,
+  HolderOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { registerLocaleData } from '@angular/common';
@@ -89,6 +90,7 @@ const icons = [
   ClockCircleOutline,
   RiseOutline,
   PictureOutline,
+  HolderOutline,
 ];
 
 // Factory function for APP_INITIALIZER
