@@ -25,55 +25,76 @@
 
   <!-- Card: Hình chương -->
   <nz-card nzTitle="Hình chương" class="images-card">
-    <!-- Upload zone -->
-    <nz-upload
-      nzType="drag"
-      [nzMultiple]="true"
-      nzAccept="image/*"
-      [nzBeforeUpload]="beforeImageUpload"
-      [nzShowUploadList]="false"
-      [nzDisabled]="uploading()"
-    >
-      <p class="ant-upload-drag-icon"><nz-icon nzType="inbox" /></p>
-      <p class="ant-upload-text">Click hoặc kéo thả hình vào đây</p>
-      <p class="ant-upload-hint">Hỗ trợ nhiều hình cùng lúc. Tối đa 3MB/hình.</p>
-    </nz-upload>
+    <!-- 2 tab: Upload file / Nhập URL -->
+    <nz-tabs>
+      <!-- Tab 1: Upload kéo thả -->
+      <nz-tab nzTitle="Upload hình">
+        <nz-upload
+          nzType="drag"
+          [nzMultiple]="true"
+          nzAccept="image/*"
+          [nzBeforeUpload]="beforeImageUpload"
+          [nzShowUploadList]="false"
+          [nzDisabled]="uploading()"
+        >
+          <p class="ant-upload-drag-icon"><nz-icon nzType="inbox" /></p>
+          <p class="ant-upload-text">Click hoặc kéo thả hình vào đây</p>
+          <p class="ant-upload-hint">Hỗ trợ nhiều hình cùng lúc. Tối đa 3MB/hình.</p>
+        </nz-upload>
 
-    <!-- Upload progress -->
-    @if (uploading()) {
-      <div class="upload-progress">
-        Đang tải... {{ uploadedCount() }}/{{ uploadTotal() }}
-      </div>
-    }
+        @if (uploading()) {
+          <div class="upload-progress">
+            Đang tải... {{ uploadedCount() }}/{{ uploadTotal() }}
+          </div>
+        }
 
-    <!-- Pending previews: file vừa chọn, chưa upload -->
-    @if (pendingPreviews().length > 0) {
-      <div class="pending-section">
-        <div class="pending-header">
-          <span>Hình chờ lưu ({{ pendingPreviews().length }})</span>
-        </div>
-        <div cdkDropList (cdkDropListDropped)="onImageDrop($event)" class="image-list">
-          @for (p of pendingPreviews(); track p.previewUrl; let i = $index) {
-            <div cdkDrag class="image-item pending">
-              <nz-icon cdkDragHandle nzType="holder" class="drag-handle" />
-              <img [src]="p.previewUrl" class="image-thumb" alt="Preview {{ i + 1 }}" />
-              <span class="image-label">Ảnh {{ i + 1 }} — {{ p.file.name }}</span>
-              <button
-                nz-button
-                nzType="text"
-                nzDanger
-                nzSize="small"
-                class="remove-btn"
-                (click)="onRemovePending(i)"
-              >
-                <nz-icon nzType="close" />
-              </button>
+        @if (pendingPreviews().length > 0) {
+          <div class="pending-section">
+            <div class="pending-header">
+              <span>Hình chờ lưu ({{ pendingPreviews().length }})</span>
             </div>
+            <div cdkDropList (cdkDropListDropped)="onImageDrop($event)" class="image-list">
+              @for (p of pendingPreviews(); track p.previewUrl; let i = $index) {
+                <div cdkDrag class="image-item pending">
+                  <nz-icon cdkDragHandle nzType="holder" class="drag-handle" />
+                  <img [src]="p.previewUrl" class="image-thumb" alt="Preview {{ i + 1 }}" />
+                  <span class="image-label">Ảnh {{ i + 1 }} — {{ p.file.name }}</span>
+                  <button
+                    nz-button
+                    nzType="text"
+                    nzDanger
+                    nzSize="small"
+                    class="remove-btn"
+                    (click)="onRemovePending(i)"
+                  >
+                    <nz-icon nzType="close" />
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        } @else if (!uploading()) {
+          <nz-empty nzNotFoundContent="Chưa có hình ảnh" />
+        }
+      </nz-tab>
+
+      <!-- Tab 2: Nhập URL -->
+      <nz-tab nzTitle="Nhập URL">
+        <div class="url-input-section">
+          <p class="url-hint">Nhập URL hình ảnh, mỗi URL một dòng.</p>
+          <textarea
+            nz-input
+            [rows]="10"
+            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"
+            [ngModel]="urlText()"
+            (ngModelChange)="urlText.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+          @if (parseUrls().length > 0) {
+            <p class="url-count">{{ parseUrls().length }} URL hợp lệ</p>
           }
         </div>
-      </div>
-    } @else if (!uploading()) {
-      <nz-empty nzNotFoundContent="Chưa có hình ảnh" />
-    }
+      </nz-tab>
+    </nz-tabs>
   </nz-card>
 </form>

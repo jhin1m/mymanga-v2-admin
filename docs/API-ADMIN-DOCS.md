@@ -188,10 +188,70 @@ Update user
 }
 ```
 
-### DELETE /api/admin/users/{id}/delete-comment
-Delete user comment
+### PUT /api/admin/users/{id}/update-points
+Update user points
 
-**Response**: `200 OK`
+**Note**: Cannot modify super admin account (`admin@admin.com`).
+
+**Request**:
+```json
+{
+  "total_points": 500,
+  "used_points": 100,
+  "achievements_points": 200
+}
+```
+
+**Validation Rules**:
+- `total_points`: sometimes, integer, min:0
+- `used_points`: sometimes, integer, min:0
+- `achievements_points`: sometimes, integer, min:0
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid-123",
+    "name": "User Name",
+    "total_points": 500,
+    "used_points": 100,
+    "achievements_points": 200
+  }
+}
+```
+
+### PUT /api/admin/users/{id}/update-role
+Update user role (each user has exactly one role)
+
+**Note**: Cannot modify super admin account (`admin@admin.com`).
+
+**Request**:
+```json
+{
+  "role": "translator"
+}
+```
+
+**Validation Rules**:
+- `role`: required, string, in:`user`,`translator`,`admin`
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid-123",
+    "name": "User Name",
+    "email": "user@example.com"
+  }
+}
+```
+
+### DELETE /api/admin/users/{id}/delete-comment
+Delete all comments of a user
+
+**Response**: `204 No Content`
 
 ## Manga Management
 

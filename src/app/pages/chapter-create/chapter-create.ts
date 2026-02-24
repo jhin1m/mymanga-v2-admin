@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, concat, of, switchMap, tap } from 'rxjs';
 
@@ -13,6 +13,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzUploadFile, NzUploadModule } from 'ng-zorro-antd/upload';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
 
 import { ChaptersService } from '../../core/services/chapters.service';
 
@@ -20,6 +21,7 @@ import { ChaptersService } from '../../core/services/chapters.service';
   selector: 'app-chapter-create',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
@@ -30,6 +32,7 @@ import { ChaptersService } from '../../core/services/chapters.service';
     NzIconModule,
     NzUploadModule,
     NzEmptyModule,
+    NzTabsModule,
   ],
   templateUrl: './chapter-create.html',
   styleUrl: './chapter-create.less',
@@ -52,6 +55,9 @@ export class ChapterCreateComponent implements OnInit, OnDestroy {
 
   // File chờ upload: hiển thị preview local, chỉ upload khi nhấn Lưu
   protected readonly pendingPreviews = signal<{ file: File; previewUrl: string }[]>([]);
+
+  // URL mode: text chứa danh sách URL (mỗi dòng 1 URL)
+  protected readonly urlText = signal('');
 
   // --- Form ---
   protected readonly createForm = this.fb.group({
@@ -81,9 +87,15 @@ export class ChapterCreateComponent implements OnInit, OnDestroy {
     this.saving.set(true);
     const { name } = this.createForm.getRawValue();
     const pending = this.pendingPreviews();
+    const urls = this.parseUrls();
 
-    // Bước 1: Tạo chapter trước
-    this.chaptersService.createChapter(this.mangaId(), { name: name ?? '' }).subscribe({
+    // Bước 1: Tạo chapter trước (kèm image_urls nếu có URL)
+    const payload: { name: string; image_urls?: string[] } = { name: name ?? '' };
+    if (urls.length > 0) {
+      payload.image_urls = urls;
+    }
+
+    this.chaptersService.createChapter(this.mangaId(), payload).subscribe({
       next: (res) => {
         const newChapterId = res.data?.id;
         if (!newChapterId) {
@@ -92,11 +104,11 @@ export class ChapterCreateComponent implements OnInit, OnDestroy {
           return;
         }
 
-        if (pending.length > 0) {
-          // Bước 2: Upload hình vào chapter vừa tạo
+        if (pending.length > 0 && urls.length === 0) {
+          // Upload mode: upload hình vào chapter vừa tạo
           this.uploadPendingFiles(newChapterId, pending);
         } else {
-          // Không có hình → chuyển sang trang edit
+          // URL mode hoặc không có hình → chuyển sang trang edit
           this.message.success('Tạo chương thành công');
           this.saving.set(false);
           this.navigateToEdit(newChapterId);
@@ -190,6 +202,16 @@ export class ChapterCreateComponent implements OnInit, OnDestroy {
     const items = [...this.pendingPreviews()];
     moveItemInArray(items, event.previousIndex, event.currentIndex);
     this.pendingPreviews.set(items);
+  }
+
+  // ========== URL MODE ==========
+
+  /** Parse textarea thành mảng URL, bỏ dòng trống và trim khoảng trắng */
+  parseUrls(): string[] {
+    return this.urlText()
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
   }
 
   // ========== NAVIGATION ==========

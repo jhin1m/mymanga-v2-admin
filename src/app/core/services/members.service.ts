@@ -12,6 +12,7 @@ export interface Member {
   id: string;
   name: string;
   email: string;
+  role: string;
   total_points: number;
   used_points: number;
   achievements_points: number;
@@ -20,6 +21,11 @@ export interface Member {
   created_at: string;
   level: number;
   exp: number;
+}
+
+/** Payload cho API update role */
+export interface UpdateRolePayload {
+  role: string;
 }
 
 /** Payload cho API update points */
@@ -78,5 +84,10 @@ export class MembersService {
   /** Cập nhật điểm của thành viên */
   updateUserPoints(id: string, payload: UpdatePointsPayload): Observable<ApiResponse<Member>> {
     return this.http.put<ApiResponse<Member>>(`${this.apiBase}/${id}/update-points`, payload);
+  }
+
+  /** Cập nhật role của thành viên */
+  updateUserRole(id: string, payload: UpdateRolePayload): Observable<ApiResponse<Member>> {
+    return this.http.put<ApiResponse<Member>>(`${this.apiBase}/${id}/update-role`, payload);
   }
 }

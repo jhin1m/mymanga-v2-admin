@@ -31,7 +31,6 @@
     <nz-card nzTitle="Hình chương" [nzExtra]="imageActions" class="images-card">
       <ng-template #imageActions>
         @if (images().length > 0) {
-          <!-- Xoá tất cả: không cần xác nhận, chỉ xoá tạm trên UI -->
           <button nz-button nzDanger nzSize="small" (click)="onClearImages()">
             <nz-icon nzType="delete" />
             Xoá tất cả
@@ -39,83 +38,104 @@
         }
       </ng-template>
 
-      <!-- Upload zone -->
-      <nz-upload
-        nzType="drag"
-        [nzMultiple]="true"
-        nzAccept="image/*"
-        [nzBeforeUpload]="beforeImageUpload"
-        [nzShowUploadList]="false"
-        [nzDisabled]="uploading()"
-      >
-        <p class="ant-upload-drag-icon"><nz-icon nzType="inbox" /></p>
-        <p class="ant-upload-text">Click hoặc kéo thả hình vào đây</p>
-        <p class="ant-upload-hint">Hỗ trợ nhiều hình cùng lúc. Tối đa 3MB/hình.</p>
-      </nz-upload>
+      <!-- 2 tab: Upload file / Nhập URL -->
+      <nz-tabs>
+        <!-- Tab 1: Upload kéo thả -->
+        <nz-tab nzTitle="Upload hình">
+          <nz-upload
+            nzType="drag"
+            [nzMultiple]="true"
+            nzAccept="image/*"
+            [nzBeforeUpload]="beforeImageUpload"
+            [nzShowUploadList]="false"
+            [nzDisabled]="uploading()"
+          >
+            <p class="ant-upload-drag-icon"><nz-icon nzType="inbox" /></p>
+            <p class="ant-upload-text">Click hoặc kéo thả hình vào đây</p>
+            <p class="ant-upload-hint">Hỗ trợ nhiều hình cùng lúc. Tối đa 3MB/hình.</p>
+          </nz-upload>
 
-      <!-- Soft delete notice -->
-      @if (pendingDeletion() && images().length === 0 && pendingPreviews().length === 0) {
-        <div class="deletion-notice">
-          <nz-icon nzType="warning" />
-          Tất cả hình sẽ bị xoá khi nhấn Lưu
-        </div>
-      }
+          <!-- Soft delete notice -->
+          @if (pendingDeletion() && images().length === 0 && pendingPreviews().length === 0) {
+            <div class="deletion-notice">
+              <nz-icon nzType="warning" />
+              Tất cả hình sẽ bị xoá khi nhấn Lưu
+            </div>
+          }
 
-      <!-- Pending previews: file vừa chọn, chưa upload -->
-      @if (pendingPreviews().length > 0) {
-        <div class="pending-section">
-          <div class="pending-header">
-            <span>Hình mới chờ lưu ({{ pendingPreviews().length }})</span>
-          </div>
-          <div class="image-list">
-            @for (p of pendingPreviews(); track p.previewUrl; let i = $index) {
-              <div class="image-item pending" [class.is-uploading]="p.status === 'uploading'"
-                   [class.is-done]="p.status === 'done'" [class.is-error]="p.status === 'error'">
-                <img [src]="p.previewUrl" class="image-thumb" alt="Preview {{ i + 1 }}" />
-                <span class="image-label">Ảnh {{ i + 1 }} — {{ p.file.name }}</span>
+          <!-- Pending previews -->
+          @if (pendingPreviews().length > 0) {
+            <div class="pending-section">
+              <div class="pending-header">
+                <span>Hình mới chờ lưu ({{ pendingPreviews().length }})</span>
+              </div>
+              <div class="image-list">
+                @for (p of pendingPreviews(); track p.previewUrl; let i = $index) {
+                  <div class="image-item pending" [class.is-uploading]="p.status === 'uploading'"
+                       [class.is-done]="p.status === 'done'" [class.is-error]="p.status === 'error'">
+                    <img [src]="p.previewUrl" class="image-thumb" alt="Preview {{ i + 1 }}" />
+                    <span class="image-label">Ảnh {{ i + 1 }} — {{ p.file.name }}</span>
 
-                <!-- Per-image upload status -->
-                @switch (p.status) {
-                  @case ('uploading') {
-                    <span class="upload-status uploading">
-                      <nz-icon nzType="loading" />
-                      Đang tải...
-                    </span>
-                  }
-                  @case ('done') {
-                    <span class="upload-status done">
-                      <nz-icon nzType="check-circle" />
-                    </span>
-                  }
-                  @case ('error') {
-                    <span class="upload-status error">
-                      <nz-icon nzType="close-circle" />
-                      Lỗi
-                    </span>
-                  }
-                  @default {
-                    <!-- waiting: chỉ hiện nút xoá khi chưa upload -->
-                    @if (!uploading()) {
-                      <button
-                        nz-button
-                        nzType="text"
-                        nzDanger
-                        nzSize="small"
-                        class="remove-btn"
-                        (click)="onRemovePending(i)"
-                      >
-                        <nz-icon nzType="close" />
-                      </button>
-                    } @else {
-                      <span class="upload-status waiting">Chờ...</span>
+                    @switch (p.status) {
+                      @case ('uploading') {
+                        <span class="upload-status uploading">
+                          <nz-icon nzType="loading" />
+                          Đang tải...
+                        </span>
+                      }
+                      @case ('done') {
+                        <span class="upload-status done">
+                          <nz-icon nzType="check-circle" />
+                        </span>
+                      }
+                      @case ('error') {
+                        <span class="upload-status error">
+                          <nz-icon nzType="close-circle" />
+                          Lỗi
+                        </span>
+                      }
+                      @default {
+                        @if (!uploading()) {
+                          <button
+                            nz-button
+                            nzType="text"
+                            nzDanger
+                            nzSize="small"
+                            class="remove-btn"
+                            (click)="onRemovePending(i)"
+                          >
+                            <nz-icon nzType="close" />
+                          </button>
+                        } @else {
+                          <span class="upload-status waiting">Chờ...</span>
+                        }
+                      }
                     }
-                  }
+                  </div>
                 }
               </div>
+            </div>
+          }
+        </nz-tab>
+
+        <!-- Tab 2: Nhập URL -->
+        <nz-tab nzTitle="Nhập URL">
+          <div class="url-input-section">
+            <p class="url-hint">Nhập URL hình ảnh, mỗi URL một dòng. Hình sẽ thay thế toàn bộ hình hiện tại khi lưu.</p>
+            <textarea
+              nz-input
+              [rows]="10"
+              placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"
+              [ngModel]="urlText()"
+              (ngModelChange)="urlText.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+            ></textarea>
+            @if (parseUrls().length > 0) {
+              <p class="url-count">{{ parseUrls().length }} URL hợp lệ</p>
             }
           </div>
-        </div>
-      }
+        </nz-tab>
+      </nz-tabs>
 
       <!-- Existing images from server with drag-drop -->
       @if (images().length > 0) {
@@ -128,7 +148,7 @@
             </div>
           }
         </div>
-      } @else if (pendingPreviews().length === 0 && !uploading() && !loading() && !pendingDeletion()) {
+      } @else if (pendingPreviews().length === 0 && !uploading() && !loading() && !pendingDeletion() && parseUrls().length === 0) {
         <nz-empty nzNotFoundContent="Chưa có hình ảnh" />
       }
     </nz-card>

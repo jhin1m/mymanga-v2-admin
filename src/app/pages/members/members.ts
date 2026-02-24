@@ -63,6 +63,54 @@ export class EditPointsModalComponent {
   achievementsPoints = this.data.achievementsPoints ?? 0;
 }
 
+// --- Modal component cho sửa role ---
+
+/** Dữ liệu truyền vào modal sửa role */
+interface RoleModalData {
+  currentRole: string;
+  isSuperAdmin: boolean;
+}
+
+/** Danh sách role có thể gán */
+const AVAILABLE_ROLES = [
+  { label: 'User', value: 'user' },
+  { label: 'Translator', value: 'translator' },
+  { label: 'Admin', value: 'admin' },
+];
+
+/** Modal form — dropdown chọn 1 role cho thành viên */
+@Component({
+  selector: 'app-edit-role-modal',
+  imports: [FormsModule, NzFormModule, NzSelectModule],
+  template: `
+    <nz-form-item>
+      <nz-form-label>Chức danh</nz-form-label>
+      <nz-form-control>
+        @if (isSuperAdmin) {
+          <p style="color: #ff4d4f">Không thể sửa role của Super Admin.</p>
+        } @else {
+          <nz-select
+            [(ngModel)]="selectedRole"
+            nzPlaceHolder="Chọn role"
+            style="width: 100%"
+          >
+            @for (role of availableRoles; track role.value) {
+              <nz-option [nzValue]="role.value" [nzLabel]="role.label" />
+            }
+          </nz-select>
+        }
+      </nz-form-control>
+    </nz-form-item>
+  `,
+})
+export class EditRoleModalComponent {
+  private readonly data = inject<RoleModalData>(NZ_MODAL_DATA);
+
+  selectedRole: string = this.data.currentRole;
+  isSuperAdmin = this.data.isSuperAdmin;
+  availableRoles = AVAILABLE_ROLES;
+}
+
 @Component({
   selector: 'app-members',
   imports: [
@@ -199,6 +247,47 @@ export class MembersComponent implements OnInit {
         this.message.success(`Đã xóa bình luận của "${member.name}"`);
       },
       error: () => this.message.error('Xóa bình luận thất bại'),
+    });
+  }
+
+  /** Super admin email — không cho phép sửa role */
+  private readonly SUPER_ADMIN_EMAIL = 'admin@admin.com';
+
+  /** Mở modal sửa role cho thành viên */
+  onEditRole(member: Member): void {
+    const isSuperAdmin = member.email === this.SUPER_ADMIN_EMAIL;
+
+    this.modal.create({
+      nzTitle: `Sửa role — ${member.name}`,
+      nzContent: EditRoleModalComponent,
+      nzData: {
+        currentRole: member.role ?? 'user',
+        isSuperAdmin,
+      } as RoleModalData,
+      nzWidth: 420,
+      nzOkText: 'Lưu',
+      nzCancelText: 'Hủy',
+      nzOkDisabled: isSuperAdmin,
+      nzOnOk: (instance: EditRoleModalComponent) => {
+        if (isSuperAdmin || !instance.selectedRole) {
+          this.message.warning('Vui lòng chọn role');
+          return false;
+        }
+
+        return new Promise<boolean>((resolve) => {
+          this.membersService.updateUserRole(member.id, { role: instance.selectedRole }).subscribe({
+            next: () => {
+              this.message.success(`Đã cập nhật role cho "${member.name}"`);
+              this.loadMembers();
+              resolve(true);
+            },
+            error: () => {
+              this.message.error('Cập nhật role thất bại');
+              resolve(false);
+            },
+          });
+        });
+      },
     });
   }
 

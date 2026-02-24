@@ -90,9 +90,10 @@
         <th nzWidth="110px" nzAlign="right">Tổng điểm</th>
         <th nzWidth="110px" nzAlign="right">Điểm dùng</th>
         <th nzWidth="120px" nzAlign="right">Điểm thành tựu</th>
+        <th nzWidth="180px">Chức danh</th>
         <th nzWidth="120px" nzAlign="center">Trạng thái</th>
         <th nzWidth="150px">Ngày tạo</th>
-        <th nzWidth="190px" nzAlign="center" nzRight>Hành động</th>
+        <th nzWidth="230px" nzAlign="center" nzRight>Hành động</th>
       </tr>
     </thead>
     <tbody>
@@ -120,6 +121,13 @@
           <td nzAlign="right">{{ member.used_points | number }}</td>
           <td nzAlign="right">{{ member.achievements_points | number }}</td>
 
+          <!-- Role -->
+          <td>
+            <nz-tag
+              [nzColor]="member.role === 'admin' ? 'red' : member.role === 'translator' ? 'blue' : 'default'"
+            >{{ member.role }}</nz-tag>
+          </td>
+
           <!-- Trạng thái cấm — banned_until !== null nghĩa là đang bị cấm -->
           <td nzAlign="center">
             @if (member.banned_until) {
@@ -134,6 +142,15 @@
           <!-- Action buttons — sticky right -->
           <td nzAlign="center" nzRight>
             <div class="action-buttons">
+              <button
+                nz-button
+                nzSize="small"
+                (click)="onEditRole(member)"
+                title="Sửa role"
+              >
+                <nz-icon nzType="team" />
+              </button>
+
               <button
                 nz-button
                 nzSize="small"

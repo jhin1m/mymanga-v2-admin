@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { catchError, concat, of, switchMap, tap, toArray } from 'rxjs';
@@ -16,6 +16,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
 
 import {
   ChapterDetail,
@@ -36,6 +37,7 @@ export interface PendingFile {
   selector: 'app-chapter-edit',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     DatePipe,
     CdkDropList,
     CdkDrag,
@@ -49,6 +51,7 @@ export interface PendingFile {
     NzSpinModule,
     NzEmptyModule,
     NzProgressModule,
+    NzTabsModule,
   ],
   templateUrl: './chapter-edit.html',
   styleUrl: './chapter-edit.less',
@@ -77,9 +80,15 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
   // Đánh dấu cần gọi API clearImages khi Save (soft delete)
   protected readonly pendingDeletion = signal(false);
 
+  // URL mode: text chứa danh sách URL (mỗi dòng 1 URL)
+  protected readonly urlText = signal('');
+  // URL gốc từ server — dùng để so sánh xem user có thay đổi URL không
+  private readonly originalUrlText = signal('');
+
   // Tính toán: có thay đổi cần lưu không (để disable/enable nút Lưu thông minh hơn)
   protected readonly hasChanges = computed(() => {
-    return this.pendingPreviews().length > 0 || this.pendingDeletion();
+    const urlsChanged = this.urlText().trim() !== this.originalUrlText().trim();
+    return this.pendingPreviews().length > 0 || this.pendingDeletion() || urlsChanged;
   });
 
   // --- Form ---
@@ -120,6 +129,10 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
           order: i,
         }));
         this.images.set(images);
+        // Populate URL tab với danh sách URL hiện tại
+        const urlJoined = (chapter.content ?? []).join('\n');
+        this.urlText.set(urlJoined);
+        this.originalUrlText.set(urlJoined);
         this.pendingDeletion.set(false);
         this.loading.set(false);
       },
@@ -144,9 +157,14 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
     this.saving.set(true);
     const { name } = this.editForm.getRawValue();
     const pending = this.pendingPreviews();
+    const urls = this.parseUrls();
+    const urlsChanged = this.urlText().trim() !== this.originalUrlText().trim();
 
-    if (pending.length > 0) {
-      // Có hình mới: clr-img → add-img × N → update tên → reload
+    if (urlsChanged && urls.length > 0) {
+      // URL mode: xoá hình cũ → update chapter với URL mới
+      this.saveWithUrls(name ?? '', urls);
+    } else if (pending.length > 0) {
+      // Upload mode: clr-img → add-img × N → update tên → reload
       this.uploadPendingFiles(pending, name ?? '');
     } else if (this.pendingDeletion()) {
       // Chỉ xoá hình (đã soft delete), gọi API clear rồi update tên
@@ -333,6 +351,40 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
     this.images.set([]);
     this.pendingDeletion.set(true);
     this.message.info('Đã đánh dấu xoá tất cả hình. Nhấn Lưu để xác nhận.');
+  }
+
+  // ========== URL MODE ==========
+
+  /** Parse textarea thành mảng URL, bỏ dòng trống và trim khoảng trắng */
+  parseUrls(): string[] {
+    return this.urlText()
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+  }
+
+  /** Xoá hình cũ trên server → cập nhật chapter với danh sách URL mới */
+  private saveWithUrls(name: string, urls: string[]): void {
+    this.chaptersService.clearImages(this.chapterId()).pipe(
+      switchMap(() => {
+        this.pendingDeletion.set(false);
+        return this.chaptersService.updateChapter(this.mangaId(), this.chapterId(), {
+          name,
+          image_urls: urls,
+        });
+      }),
+    ).subscribe({
+      next: () => {
+        this.message.success('Cập nhật chương thành công');
+        this.saving.set(false);
+        this.urlText.set('');
+        this.loadChapter();
+      },
+      error: () => {
+        this.message.error('Cập nhật chương thất bại');
+        this.saving.set(false);
+      },
+    });
   }
 
   // ========== NAVIGATION ==========
