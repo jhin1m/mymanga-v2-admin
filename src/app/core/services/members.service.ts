@@ -14,11 +14,19 @@ export interface Member {
   email: string;
   total_points: number;
   used_points: number;
+  achievements_points: number;
   avatar_full_url: string | null;
   banned_until: string | null;
   created_at: string;
   level: number;
   exp: number;
+}
+
+/** Payload cho API update points */
+export interface UpdatePointsPayload {
+  total_points?: number;
+  used_points?: number;
+  achievements_points?: number;
 }
 
 /** Params gửi lên API để filter/phân trang */
@@ -65,5 +73,10 @@ export class MembersService {
   /** Xóa tất cả bình luận của thành viên */
   deleteUserComments(id: string): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.apiBase}/${id}/delete-comment`);
+  }
+
+  /** Cập nhật điểm của thành viên */
+  updateUserPoints(id: string, payload: UpdatePointsPayload): Observable<ApiResponse<Member>> {
+    return this.http.put<ApiResponse<Member>>(`${this.apiBase}/${id}/update-points`, payload);
   }
 }

@@ -591,17 +591,105 @@ List advertisements
 - `filter[position]`: Filter by position
 - `filter[is_active]`: Filter by active status (0/1)
 
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "id": "uuid-123",
+        "name": "Home Page Banner",
+        "type": "banner",
+        "location": "home",
+        "position": "top",
+        "code": "<script>...</script>",
+        "is_active": true,
+        "order": 1,
+        "created_at": "2024-01-01T00:00:00.000000Z",
+        "updated_at": "2024-01-01T00:00:00.000000Z"
+      }
+    ],
+    "meta": {
+      "current_page": 1,
+      "per_page": 20,
+      "total": 5
+    }
+  }
+}
+```
+
 ### GET /api/admin/advertisements/{id}
 Get advertisement details
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid-123",
+    "name": "Home Page Banner",
+    "type": "banner",
+    "location": "home",
+    "position": "top",
+    "code": "<script>...</script>",
+    "is_active": true,
+    "order": 1,
+    "created_at": "2024-01-01T00:00:00.000000Z",
+    "updated_at": "2024-01-01T00:00:00.000000Z"
+  }
+}
+```
 
 ### POST /api/admin/advertisements
 Create advertisement
 
+**Request**:
+```json
+{
+  "name": "Manga Detail Catfish",
+  "type": "catfish",
+  "location": "manga_detail",
+  "position": "bottom",
+  "code": "<script>alert('Ad')</script>",
+  "is_active": true,
+  "order": 0
+}
+```
+
+**Validation Rules**:
+- `name`: required, string, max:255
+- `type`: required, in:`banner`, `catfish`
+- `location`: required, in:`home`, `manga_detail`, `chapter_content`, `all_pages`
+- `position`: nullable, string, max:50
+- `code`: required, string
+- `is_active`: sometimes, boolean
+- `order`: sometimes, integer, min:0
+
 ### PUT /api/admin/advertisements/{id}
 Update advertisement
 
+**Request**:
+```json
+{
+  "name": "Updated Ad Name",
+  "is_active": false
+}
+```
+
+**Validation Rules**:
+- `name`: filled, string, max:255
+- `type`: filled, in:`banner`, `catfish`
+- `location`: filled, in:`home`, `manga_detail`, `chapter_content`, `all_pages`
+- `position`: nullable, string, max:50
+- `code`: filled, string
+- `is_active`: sometimes, boolean
+- `order`: sometimes, integer, min:0
+
 ### DELETE /api/admin/advertisements/{id}
 Delete advertisement
+
+**Response**: `204 No Content`
 
 ## Static/System Management
 

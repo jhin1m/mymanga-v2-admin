@@ -62,6 +62,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'advertisements',
+        loadComponent: () =>
+          import('./pages/advertisements/advertisements').then(
+            (m) => m.AdvertisementsComponent
+          ),
+      },
+      {
         path: 'manga',
         children: [
           {

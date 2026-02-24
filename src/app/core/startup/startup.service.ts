@@ -111,6 +111,11 @@ export class StartupService {
             link: '/notifications',
             icon: { type: 'icon', value: 'notification' },
           },
+          {
+            text: 'Quảng cáo',
+            link: '/advertisements',
+            icon: { type: 'icon', value: 'fund-projection-screen' },
+          },
         ],
       },
     ]);

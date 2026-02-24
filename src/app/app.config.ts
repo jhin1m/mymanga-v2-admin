@@ -40,6 +40,7 @@ import {
   RiseOutline,
   PictureOutline,
   HolderOutline,
+  FundProjectionScreenOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { registerLocaleData } from '@angular/common';
@@ -91,6 +92,7 @@ const icons = [
   RiseOutline,
   PictureOutline,
   HolderOutline,
+  FundProjectionScreenOutline,
 ];
 
 // Factory function for APP_INITIALIZER

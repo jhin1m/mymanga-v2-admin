@@ -78,7 +78,7 @@
     [nzLoading]="loading()"
     [nzFrontPagination]="false"
     [nzShowPagination]="false"
-    [nzScroll]="{ x: '1000px' }"
+    [nzScroll]="{ x: '1200px' }"
     nzSize="middle"
   >
 
@@ -89,9 +89,10 @@
         <th nzWidth="200px">Email</th>
         <th nzWidth="110px" nzAlign="right">Tổng điểm</th>
         <th nzWidth="110px" nzAlign="right">Điểm dùng</th>
+        <th nzWidth="120px" nzAlign="right">Điểm thành tựu</th>
         <th nzWidth="120px" nzAlign="center">Trạng thái</th>
         <th nzWidth="150px">Ngày tạo</th>
-        <th nzWidth="160px" nzAlign="center" nzRight>Hành động</th>
+        <th nzWidth="190px" nzAlign="center" nzRight>Hành động</th>
       </tr>
     </thead>
     <tbody>
@@ -117,6 +118,7 @@
           <td class="text-muted">{{ member.email }}</td>
           <td nzAlign="right">{{ member.total_points | number }}</td>
           <td nzAlign="right">{{ member.used_points | number }}</td>
+          <td nzAlign="right">{{ member.achievements_points | number }}</td>
 
           <!-- Trạng thái cấm — banned_until !== null nghĩa là đang bị cấm -->
           <td nzAlign="center">
@@ -132,6 +134,15 @@
           <!-- Action buttons — sticky right -->
           <td nzAlign="center" nzRight>
             <div class="action-buttons">
+              <button
+                nz-button
+                nzSize="small"
+                (click)="onEditPoints(member)"
+                title="Sửa điểm"
+              >
+                <nz-icon nzType="edit" />
+              </button>
+
               <button
                 nz-button
                 [nzType]="member.banned_until ? 'primary' : 'default'"
