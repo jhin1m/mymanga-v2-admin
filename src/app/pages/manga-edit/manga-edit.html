@@ -21,11 +21,17 @@
       <!-- LEFT COLUMN: Main form fields -->
       <div nz-col [nzXs]="24" [nzLg]="16">
         <nz-card nzTitle="Thông tin chung" [nzExtra]="hotSwitchTpl">
-          <!-- Template hiển thị switch "Truyện hot" bên phải tiêu đề card -->
+          <!-- Template hiển thị switch "Duyệt" + "Truyện hot" bên phải tiêu đề card -->
           <ng-template #hotSwitchTpl>
-            <div class="hot-switch">
-              <span>Truyện hot</span>
-              <nz-switch formControlName="is_hot" />
+            <div class="header-switches">
+              <div class="switch-item">
+                <span>Duyệt</span>
+                <nz-switch formControlName="is_reviewed" nzCheckedChildren="Đã duyệt" nzUnCheckedChildren="Chờ duyệt" />
+              </div>
+              <div class="switch-item">
+                <span>Truyện hot</span>
+                <nz-switch formControlName="is_hot" />
+              </div>
             </div>
           </ng-template>
           <!-- Tên truyện -->

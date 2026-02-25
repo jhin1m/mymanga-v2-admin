@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 // NG-ZORRO modules
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -16,6 +17,7 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
+import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { Manga, MangaListParams, MangaService } from '../../core/services/manga.service';
@@ -25,6 +27,7 @@ import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-b
   selector: 'app-manga-list',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     RouterLink,
     UpperCasePipe,
     NzCardModule,
@@ -39,6 +42,7 @@ import { PaginationBarComponent } from '../../shared/pagination-bar/pagination-b
     NzEmptyModule,
     NzSpinModule,
     NzTooltipModule,
+    NzSwitchModule,
     PaginationBarComponent,
   ],
   templateUrl: './manga-list.html',
@@ -55,6 +59,8 @@ export class MangaListComponent implements OnInit {
   protected readonly total = signal(0);
   protected readonly pageIndex = signal(1);
   protected readonly pageSize = signal(20);
+  /** Tracks which manga IDs are currently toggling review status (for loading spinner) */
+  protected readonly togglingReview = signal<Set<string>>(new Set());
 
   // --- Search form filters ---
   protected readonly searchForm = this.fb.group({
@@ -134,6 +140,33 @@ export class MangaListComponent implements OnInit {
     this.pageSize.set(size);
     this.pageIndex.set(1);
     this.loadMangas();
+  }
+
+  /** Toggle trạng thái duyệt (publish/unpublish) — optimistic UI update */
+  onToggleReview(manga: Manga, newValue: boolean): void {
+    // Thêm manga ID vào set loading
+    const set = new Set(this.togglingReview());
+    set.add(manga.id);
+    this.togglingReview.set(set);
+
+    this.mangaService.toggleReview(manga.id, newValue).subscribe({
+      next: () => {
+        // Cập nhật trực tiếp trong list (không cần reload toàn bộ)
+        this.mangas.update((list) => list.map((m) => (m.id === manga.id ? { ...m, is_reviewed: newValue } : m)));
+        this.message.success(newValue ? 'Đã duyệt truyện' : 'Đã bỏ duyệt truyện');
+        this.removeTogglingId(manga.id);
+      },
+      error: () => {
+        this.message.error('Cập nhật trạng thái thất bại');
+        this.removeTogglingId(manga.id);
+      },
+    });
+  }
+
+  private removeTogglingId(id: string): void {
+    const set = new Set(this.togglingReview());
+    set.delete(id);
+    this.togglingReview.set(set);
   }
 
   /** Xoá manga — gọi sau khi user confirm ở popconfirm */

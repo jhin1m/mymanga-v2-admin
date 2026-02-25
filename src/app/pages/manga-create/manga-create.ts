@@ -92,6 +92,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
     pilot: [''],
     status: [2],
     is_hot: [false],
+    is_reviewed: [false],
     author_id: [''],
     artist_id: [''],
     group_id: [''],
@@ -287,6 +288,7 @@ export class MangaCreateComponent implements OnInit, OnDestroy {
     if (v.pilot) fd.append('pilot', v.pilot);
     fd.append('status', String(v.status));
     fd.append('is_hot', v.is_hot ? '1' : '0');
+    fd.append('is_reviewed', v.is_reviewed ? '1' : '0');
     if (v.author_id) fd.append('author_id', v.author_id);
     if (v.artist_id) fd.append('artist_id', v.artist_id);
     if (v.group_id) fd.append('group_id', v.group_id);

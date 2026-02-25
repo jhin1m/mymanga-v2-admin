@@ -43,7 +43,7 @@ import {
   FundProjectionScreenOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
-import { registerLocaleData } from '@angular/common';
+import { HashLocationStrategy, LocationStrategy, registerLocaleData } from '@angular/common';
 import { vi_VN } from 'ng-zorro-antd/i18n';
 
 import { NGX_EDITOR_CONFIG_TOKEN } from 'ngx-editor';
@@ -116,6 +116,9 @@ export const appConfig: ApplicationConfig = {
         delon: delonViVN,
       },
     }),
+    // Hash routing: URL dạng /admincp/#/manga/edit/id
+    // Server luôn trả index.html, Angular tự xử lý phần sau #
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
     { provide: NGX_EDITOR_CONFIG_TOKEN, useValue: {} },
     {
       provide: APP_INITIALIZER,

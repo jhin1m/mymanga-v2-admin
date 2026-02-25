@@ -18,9 +18,15 @@
     <div nz-col [nzXs]="24" [nzLg]="16">
       <nz-card nzTitle="Thông tin chung" [nzExtra]="hotSwitchTpl">
         <ng-template #hotSwitchTpl>
-          <div class="hot-switch">
-            <span>Truyện hot</span>
-            <nz-switch formControlName="is_hot" />
+          <div class="header-switches">
+            <div class="switch-item">
+              <span>Duyệt</span>
+              <nz-switch formControlName="is_reviewed" nzCheckedChildren="Đã duyệt" nzUnCheckedChildren="Chờ duyệt" />
+            </div>
+            <div class="switch-item">
+              <span>Truyện hot</span>
+              <nz-switch formControlName="is_hot" />
+            </div>
           </div>
         </ng-template>
 

@@ -157,6 +157,18 @@
                 <nz-tag>{{ genre.name | uppercase }}</nz-tag>
               }
             </div>
+
+            <!-- Toggle duyệt truyện -->
+            <div class="manga-review-toggle">
+              <nz-switch
+                [ngModel]="manga.is_reviewed"
+                [nzLoading]="togglingReview().has(manga.id)"
+                (ngModelChange)="onToggleReview(manga, $event)"
+                nzCheckedChildren="Đã duyệt"
+                nzUnCheckedChildren="Chờ duyệt"
+                nzSize="small"
+              />
+            </div>
           </div>
         </div>
       }

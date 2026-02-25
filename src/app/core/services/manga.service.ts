@@ -102,6 +102,13 @@ export class MangaService {
     return this.http.post<ApiResponse<Manga>>(`${this.apiBase}/${id}`, formData);
   }
 
+  /** Toggle trạng thái duyệt (publish/unpublish) — gửi JSON thay vì FormData vì chỉ cập nhật 1 field */
+  toggleReview(id: string, isReviewed: boolean): Observable<ApiResponse<Manga>> {
+    return this.http.put<ApiResponse<Manga>>(`${this.apiBase}/${id}`, {
+      is_reviewed: isReviewed ? 1 : 0,
+    });
+  }
+
   /** Xoá manga theo UUID — trả 204 No Content */
   deleteManga(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiBase}/${id}`);
