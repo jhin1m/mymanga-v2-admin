@@ -206,8 +206,8 @@ export class MangaEditComponent implements OnInit, OnDestroy {
       name_alt: manga.name_alt ?? '',
       pilot: manga.pilot ?? '',
       status: manga.status,
-      is_hot: manga.is_hot,
-      is_reviewed: manga.is_reviewed,
+      is_hot: !!manga.is_hot,
+      is_reviewed: !!manga.is_reviewed,
       author_id: manga.author?.id ?? '',
       artist_id: manga.artist?.id ?? '',
       group_id: manga.group?.id ?? '',
@@ -423,7 +423,10 @@ export class MangaEditComponent implements OnInit, OnDestroy {
     if (v.pilot) fd.append('pilot', v.pilot);
     fd.append('status', String(v.status));
     fd.append('is_hot', v.is_hot ? '1' : '0');
-    fd.append('is_reviewed', v.is_reviewed ? '1' : '0');
+    // Chỉ gửi is_reviewed khi user thực sự thay đổi switch, tránh ghi đè trạng thái duyệt
+    if (this.editForm.get('is_reviewed')!.dirty) {
+      fd.append('is_reviewed', v.is_reviewed ? '1' : '0');
+    }
     if (v.author_id) fd.append('author_id', v.author_id);
     if (v.artist_id) fd.append('artist_id', v.artist_id);
     if (v.group_id) fd.append('group_id', v.group_id);
