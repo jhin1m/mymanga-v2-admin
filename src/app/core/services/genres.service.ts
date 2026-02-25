@@ -54,7 +54,10 @@ export class GenresService {
 
   /** Lấy tất cả genres — dùng cho checkbox grid (manga create/edit) */
   getAllGenres(): Observable<GenreListResponse> {
-    return this.http.get<GenreListResponse>(this.apiBase);
+    // Truyền per_page lớn để lấy toàn bộ genres, tránh bị cắt bởi phân trang mặc định của API
+    return this.http.get<GenreListResponse>(this.apiBase, {
+      params: { per_page: '9999' },
+    });
   }
 
   /** Lấy danh sách genres có filter + phân trang */
