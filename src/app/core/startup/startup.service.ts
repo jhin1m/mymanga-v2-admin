@@ -123,6 +123,21 @@ export class StartupService {
           },
         ],
       },
+      {
+        group: true,
+        text: 'CÔNG CỤ',
+        children: [
+          {
+            text: 'Crawler',
+            icon: { type: 'icon', value: 'cloud-download' },
+            children: [
+              { text: 'Crawl Manga', link: '/crawler/crawl', icon: { type: 'icon', value: 'bug' } },
+              { text: 'Lịch sử', link: '/crawler/history', icon: { type: 'icon', value: 'history' } },
+              { text: 'Proxy', link: '/crawler/proxies', icon: { type: 'icon', value: 'api' } },
+            ],
+          },
+        ],
+      },
     ]);
   }
 }

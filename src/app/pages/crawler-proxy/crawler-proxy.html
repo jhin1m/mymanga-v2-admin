@@ -1,0 +1,346 @@
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <nz-card class="stat-card">
+    <nz-statistic
+      nzTitle="Active"
+      [nzValue]="stats().active"
+      [nzValueStyle]="{ color: '#52c41a' }"
+    />
+  </nz-card>
+
+  <nz-card class="stat-card">
+    <nz-statistic
+      nzTitle="Inactive"
+      [nzValue]="stats().inactive"
+      [nzValueStyle]="{ color: '#faad14' }"
+    />
+  </nz-card>
+
+  <nz-card class="stat-card">
+    <nz-statistic
+      nzTitle="Dead"
+      [nzValue]="stats().dead"
+      [nzValueStyle]="{ color: '#ff4d4f' }"
+    />
+  </nz-card>
+
+  <nz-card class="stat-card">
+    <nz-statistic
+      nzTitle="Tổng"
+      [nzValue]="stats().total"
+    />
+  </nz-card>
+</div>
+
+<!-- Filter Card -->
+<nz-card nzTitle="Danh sách Proxy" [nzExtra]="filterExtra">
+  <form nz-form [formGroup]="filterForm" (ngSubmit)="onSearch()" nzLayout="inline">
+    <nz-form-item>
+      <nz-form-label>Loại</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="type"
+          nzPlaceHolder="Tất cả"
+          nzAllowClear
+          style="width: 140px"
+        >
+          @for (t of proxyTypes; track t.value) {
+            <nz-option [nzValue]="t.value" [nzLabel]="t.label" />
+          }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Trạng thái</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="is_active"
+          nzPlaceHolder="Tất cả"
+          nzAllowClear
+          style="width: 140px"
+        >
+          @for (opt of activeOptions; track opt.value) {
+            <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+          }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+
+  <ng-template #filterExtra>
+    <div class="search-actions">
+      <button nz-button nzSize="small" type="button" (click)="onReset()">
+        <nz-icon nzType="redo" />
+        Reset
+      </button>
+      <button nz-button nzType="primary" nzSize="small" (click)="onSearch()">
+        <nz-icon nzType="search" />
+        Lọc
+      </button>
+    </div>
+  </ng-template>
+</nz-card>
+
+<!-- Action Bar -->
+<div class="action-bar">
+  <button nz-button nzType="primary" (click)="onToggleAddForm()">
+    <nz-icon nzType="plus" />
+    Thêm Proxy
+  </button>
+
+  <button nz-button (click)="onToggleImportForm()">
+    <nz-icon nzType="import" />
+    Import
+  </button>
+
+  <button
+    nz-button
+    [nzLoading]="testAllLoading()"
+    (click)="onTestAll()"
+  >
+    <nz-icon nzType="api" />
+    Test All
+  </button>
+
+  <button
+    nz-button
+    nzDanger
+    nz-popconfirm
+    nzPopconfirmTitle="Xóa tất cả proxy dead?"
+    (nzOnConfirm)="onRemoveDead()"
+    [nzLoading]="removeDeadLoading()"
+  >
+    <nz-icon nzType="delete" />
+    Remove Dead
+  </button>
+</div>
+
+<!-- Add Proxy Inline Form -->
+@if (showAddForm()) {
+  <div class="inline-form">
+    <strong style="display: block; margin-bottom: 12px;">Thêm Proxy mới</strong>
+    <form nz-form [formGroup]="addForm" nzLayout="vertical">
+      <div class="form-row">
+        <nz-form-item style="flex: 2; min-width: 220px;">
+          <nz-form-label nzRequired>Địa chỉ (ip:port)</nz-form-label>
+          <nz-form-control nzErrorTip="Vui lòng nhập địa chỉ proxy">
+            <input
+              nz-input
+              formControlName="address"
+              placeholder="192.168.1.1:8080"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item style="width: 150px;">
+          <nz-form-label>Loại</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="type" style="width: 100%">
+              @for (t of proxyTypes; track t.value) {
+                <nz-option [nzValue]="t.value" [nzLabel]="t.label" />
+              }
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item style="flex: 1; min-width: 140px;">
+          <nz-form-label>Username</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="username" placeholder="(tùy chọn)" />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item style="flex: 1; min-width: 140px;">
+          <nz-form-label>Password</nz-form-label>
+          <nz-form-control>
+            <input
+              nz-input
+              type="password"
+              formControlName="password"
+              placeholder="(tùy chọn)"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <div style="display: flex; gap: 8px; align-items: flex-end; padding-bottom: 4px;">
+          <button
+            nz-button
+            nzType="primary"
+            type="button"
+            [nzLoading]="addLoading()"
+            (click)="onAddProxy()"
+          >
+            Lưu
+          </button>
+          <button nz-button type="button" (click)="onToggleAddForm()">
+            Hủy
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Import Inline Form -->
+@if (showImportForm()) {
+  <div class="inline-form">
+    <strong style="display: block; margin-bottom: 12px;">Import Proxy</strong>
+    <p style="opacity: 0.65; margin-bottom: 12px; font-size: 13px;">
+      Mỗi dòng một proxy. Định dạng: <code>ip:port</code> hoặc <code>ip:port:user:pass</code>
+    </p>
+    <form nz-form [formGroup]="importForm" nzLayout="vertical">
+      <div nz-row [nzGutter]="16">
+        <div nz-col [nzSpan]="6">
+          <nz-form-item>
+            <nz-form-label>Loại mặc định</nz-form-label>
+            <nz-form-control>
+              <nz-select formControlName="type" style="width: 100%">
+                @for (t of proxyTypes; track t.value) {
+                  <nz-option [nzValue]="t.value" [nzLabel]="t.label" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzSpan]="18">
+          <nz-form-item>
+            <nz-form-label nzRequired>Danh sách proxy</nz-form-label>
+            <nz-form-control nzErrorTip="Vui lòng nhập ít nhất một proxy">
+              <textarea
+                nz-input
+                formControlName="text"
+                placeholder="192.168.1.1:8080&#10;10.0.0.1:3128:user:pass&#10;..."
+                [nzAutosize]="{ minRows: 5, maxRows: 12 }"
+              ></textarea>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button
+          nz-button
+          nzType="primary"
+          type="button"
+          [nzLoading]="importLoading()"
+          (click)="onImportProxies()"
+        >
+          Import
+        </button>
+        <button nz-button type="button" (click)="onToggleImportForm()">
+          Hủy
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Proxy Table -->
+<nz-card class="table-card">
+  <!-- Pagination top -->
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="proxy"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <nz-table
+    #proxyTable
+    [nzData]="proxies()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzShowPagination]="false"
+    [nzScroll]="{ x: '900px' }"
+    nzSize="middle"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="60px" nzAlign="center">ID</th>
+        <th nzWidth="240px">Địa chỉ</th>
+        <th nzWidth="100px" nzAlign="center">Loại</th>
+        <th nzWidth="120px" nzAlign="center">Trạng thái</th>
+        <th nzWidth="180px">Lần test cuối</th>
+        <th nzWidth="140px" nzAlign="center" nzRight>Hành động</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (proxy of proxyTable.data; track proxy.id) {
+        <tr>
+          <td nzAlign="center" class="text-muted">{{ proxy.id }}</td>
+
+          <td>
+            <span class="proxy-address">{{ proxy.address }}</span>
+            @if (proxy.username) {
+              <span class="proxy-auth text-muted"> ({{ proxy.username }})</span>
+            }
+          </td>
+
+          <td nzAlign="center">
+            <nz-tag [nzColor]="proxy.type === 'http' ? 'blue' : proxy.type === 'socks4' ? 'purple' : 'geekblue'">
+              {{ proxy.type.toUpperCase() }}
+            </nz-tag>
+          </td>
+
+          <td nzAlign="center">
+            @if (proxy.last_test_result === true) {
+              <nz-tag nzColor="success">Active</nz-tag>
+            } @else if (proxy.last_test_result === false) {
+              <nz-tag nzColor="error">Dead</nz-tag>
+            } @else {
+              <nz-tag>Untested</nz-tag>
+            }
+          </td>
+
+          <td class="text-muted">
+            {{ proxy.last_tested_at ? (proxy.last_tested_at | date:'dd/MM/yyyy HH:mm') : '—' }}
+          </td>
+
+          <td nzAlign="center" nzRight>
+            <div class="actions">
+              <button
+                nz-button
+                nzSize="small"
+                [nzLoading]="isTestingProxy(proxy.id)"
+                (click)="onTestProxy(proxy)"
+                title="Test proxy"
+              >
+                <nz-icon nzType="api" />
+              </button>
+
+              <button
+                nz-button
+                nzDanger
+                nzSize="small"
+                nz-popconfirm
+                nzPopconfirmTitle="Xóa proxy này?"
+                (nzOnConfirm)="onDeleteProxy(proxy)"
+                title="Xóa"
+              >
+                <nz-icon nzType="delete" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  <!-- Pagination bottom -->
+  @if (proxies().length > 0) {
+    <app-pagination-bar
+      [total]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      position="bottom"
+      (pageIndexChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
+  }
+</nz-card>

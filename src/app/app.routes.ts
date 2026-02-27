@@ -103,6 +103,33 @@ export const routes: Routes = [
           { path: '', redirectTo: 'list', pathMatch: 'full' },
         ],
       },
+      {
+        path: 'crawler',
+        children: [
+          {
+            path: 'crawl',
+            loadComponent: () =>
+              import('./pages/crawler-crawl/crawler-crawl').then(
+                (m) => m.CrawlerCrawlComponent
+              ),
+          },
+          {
+            path: 'history',
+            loadComponent: () =>
+              import('./pages/crawler-history/crawler-history').then(
+                (m) => m.CrawlerHistoryComponent
+              ),
+          },
+          {
+            path: 'proxies',
+            loadComponent: () =>
+              import('./pages/crawler-proxy/crawler-proxy').then(
+                (m) => m.CrawlerProxyComponent
+              ),
+          },
+          { path: '', redirectTo: 'crawl', pathMatch: 'full' },
+        ],
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

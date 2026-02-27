@@ -88,7 +88,9 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
   // Tính toán: có thay đổi cần lưu không (để disable/enable nút Lưu thông minh hơn)
   protected readonly hasChanges = computed(() => {
     const urlsChanged = this.urlText().trim() !== this.originalUrlText().trim();
-    return this.pendingPreviews().length > 0 || this.pendingDeletion() || urlsChanged;
+    // So sánh số ảnh hiện tại với content gốc từ server
+    const imagesChanged = this.images().length !== (this.chapter()?.content?.length ?? 0);
+    return this.pendingPreviews().length > 0 || this.pendingDeletion() || urlsChanged || imagesChanged;
   });
 
   // --- Form ---
@@ -351,6 +353,11 @@ export class ChapterEditComponent implements OnInit, OnDestroy {
     this.images.set([]);
     this.pendingDeletion.set(true);
     this.message.info('Đã đánh dấu xoá tất cả hình. Nhấn Lưu để xác nhận.');
+  }
+
+  /** Xoá 1 ảnh khỏi danh sách (soft delete — chỉ xoá trên UI, lưu mới gửi server) */
+  onRemoveImage(index: number): void {
+    this.images.update(list => list.filter((_, i) => i !== index));
   }
 
   // ========== URL MODE ==========

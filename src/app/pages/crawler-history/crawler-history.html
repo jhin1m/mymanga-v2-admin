@@ -1,0 +1,190 @@
+<nz-card nzTitle="Crawl History">
+  <!-- Filter bar -->
+  <div class="filter-bar" [formGroup]="searchForm">
+    <!-- Status select -->
+    <nz-select formControlName="status" nzPlaceHolder="All Statuses" nzAllowClear>
+      @for (opt of statusOptions; track opt.value) {
+        <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+      }
+    </nz-select>
+
+    <!-- Source driver select -->
+    <nz-select formControlName="source_driver" nzPlaceHolder="All Sources" nzAllowClear>
+      @for (driver of drivers(); track driver) {
+        <nz-option [nzValue]="driver" [nzLabel]="driver" />
+      }
+    </nz-select>
+
+    <!-- Manga name input -->
+    <nz-input-group [nzPrefix]="prefixSearch">
+      <input
+        nz-input
+        formControlName="manga_name"
+        placeholder="Manga name..."
+        (keydown.enter)="onSearch()"
+      />
+    </nz-input-group>
+    <ng-template #prefixSearch>
+      <nz-icon nzType="search" />
+    </ng-template>
+
+    <!-- Actions -->
+    <button nz-button nzType="primary" (click)="onSearch()">
+      <nz-icon nzType="search" />
+      Search
+    </button>
+    <button nz-button (click)="onReset()">
+      <nz-icon nzType="redo" />
+      Reset
+    </button>
+  </div>
+
+  <!-- Pagination top -->
+  <app-pagination-bar
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    totalLabel="jobs"
+    position="top"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  <!-- Table -->
+  <nz-table
+    [nzData]="items()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzTotal]="total()"
+    nzSize="small"
+    nzTableLayout="fixed"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="220px">Manga</th>
+        <th nzWidth="120px">Source</th>
+        <th nzWidth="110px">Status</th>
+        <th nzWidth="100px">Chapters</th>
+        <th nzWidth="90px">Duration</th>
+        <th nzWidth="140px">Created</th>
+        <th nzWidth="120px">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (job of items(); track job.id) {
+        <tr>
+          <!-- Manga column -->
+          <td>
+            <div class="manga-cell">
+              @if (job.manga_name) {
+                <span class="manga-name" [title]="job.manga_name">{{ job.manga_name }}</span>
+              } @else if (job.manga_url) {
+                <a
+                  class="manga-url"
+                  [href]="job.manga_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [title]="job.manga_url"
+                  nz-tooltip
+                  [nzTooltipTitle]="job.manga_url"
+                >{{ getMangaLabel(job) }}</a>
+              } @else {
+                <span class="manga-page-range">Trang {{ job.start_page ?? 1 }}-{{ job.end_page ?? '?' }}</span>
+              }
+              @if (job.error_message) {
+                <span
+                  class="error-hint"
+                  nz-tooltip
+                  [nzTooltipTitle]="job.error_message"
+                >
+                  <nz-icon nzType="warning" nzTheme="fill" />
+                </span>
+              }
+            </div>
+          </td>
+
+          <!-- Source driver column -->
+          <td>
+            <code class="driver-name">{{ job.source_driver }}</code>
+          </td>
+
+          <!-- Status column -->
+          <td>
+            <nz-tag [nzColor]="statusConfig[job.status]?.color ?? 'default'">
+              {{ statusConfig[job.status]?.label ?? job.status }}
+            </nz-tag>
+          </td>
+
+          <!-- Chapters column -->
+          <td>
+            @if (job.total_chapters > 0) {
+              <span>{{ job.crawled_chapters }} / {{ job.total_chapters }}</span>
+            } @else {
+              <span class="muted">-</span>
+            }
+          </td>
+
+          <!-- Duration column -->
+          <td>{{ formatDuration(job.duration_seconds) }}</td>
+
+          <!-- Created at column -->
+          <td>
+            <span nz-tooltip [nzTooltipTitle]="formatDate(job.updated_at)">
+              {{ formatDate(job.created_at) }}
+            </span>
+          </td>
+
+          <!-- Actions column -->
+          <td>
+            <div class="actions">
+              <!-- Retry button: shown for failed/partial -->
+              @if (isRetryable(job.status)) {
+                <button
+                  nz-button
+                  nzSize="small"
+                  nzType="primary"
+                  [nzLoading]="retryingIds().has(job.id)"
+                  (click)="onRetry(job)"
+                  nz-tooltip
+                  nzTooltipTitle="Retry job"
+                >
+                  <nz-icon nzType="reload" />
+                </button>
+              }
+
+              <!-- Cancel button: shown for running/pending, with popconfirm -->
+              @if (isCancellable(job.status)) {
+                <button
+                  nz-button
+                  nzSize="small"
+                  nzDanger
+                  [nzLoading]="cancellingIds().has(job.id)"
+                  nz-popconfirm
+                  nzPopconfirmTitle="Huỷ job này?"
+                  nzOkText="Huỷ job"
+                  nzCancelText="Giữ lại"
+                  nzOkDanger
+                  (nzOnConfirm)="onCancel(job)"
+                  nz-tooltip
+                  nzTooltipTitle="Cancel job"
+                >
+                  <nz-icon nzType="stop" />
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  <!-- Pagination bottom -->
+  <app-pagination-bar
+    position="bottom"
+    [total]="total()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    (pageIndexChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+</nz-card>

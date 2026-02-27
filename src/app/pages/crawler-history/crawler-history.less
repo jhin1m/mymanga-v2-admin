@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  padding: 24px;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+
+  nz-select {
+    width: 160px;
+  }
+
+  nz-input-group {
+    width: 200px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+// --- Manga cell ---
+.manga-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.manga-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  display: inline-block;
+}
+
+.manga-url {
+  color: #1890ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  display: inline-block;
+  font-size: 12px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.manga-page-range {
+  font-style: italic;
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.error-hint {
+  color: #ff4d4f;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+// --- Driver name ---
+.driver-name {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+// --- Muted placeholder ---
+.muted {
+  opacity: 0.4;
+}

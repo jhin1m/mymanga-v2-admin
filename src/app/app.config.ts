@@ -41,6 +41,9 @@ import {
   PictureOutline,
   HolderOutline,
   FundProjectionScreenOutline,
+  CloudDownloadOutline,
+  BugOutline,
+  ApiOutline,
 } from '@ant-design/icons-angular/icons';
 import vi from '@angular/common/locales/vi';
 import { HashLocationStrategy, LocationStrategy, registerLocaleData } from '@angular/common';
@@ -93,6 +96,9 @@ const icons = [
   PictureOutline,
   HolderOutline,
   FundProjectionScreenOutline,
+  CloudDownloadOutline,
+  BugOutline,
+  ApiOutline,
 ];
 
 // Factory function for APP_INITIALIZER

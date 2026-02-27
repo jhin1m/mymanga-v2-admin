@@ -145,6 +145,18 @@
               <nz-icon cdkDragHandle nzType="holder" class="drag-handle" />
               <img [src]="img.image_full_url" class="image-thumb" alt="Trang {{ i + 1 }}" />
               <span class="image-label">Trang {{ i + 1 }}</span>
+              <!-- Nút xoá từng ảnh (soft delete — chỉ xoá trên UI) -->
+              <button
+                nz-button
+                nzType="default"
+                nzDanger
+                nzSize="small"
+                class="remove-btn"
+                (click)="onRemoveImage(i)"
+              >
+                <nz-icon nzType="delete" />
+                Xoá
+              </button>
             </div>
           }
         </div>

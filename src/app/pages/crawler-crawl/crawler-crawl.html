@@ -1,0 +1,266 @@
+<nz-card nzTitle="Crawl Manga">
+  <form nz-form [formGroup]="form" nzLayout="vertical" (ngSubmit)="onSubmit()">
+
+    <!-- Mode toggle -->
+    <div class="form-section">
+      <nz-form-item>
+        <nz-form-label>Crawl Mode</nz-form-label>
+        <nz-form-control>
+          <nz-radio-group formControlName="mode">
+            <label nz-radio nzValue="url">Single URL</label>
+            <label nz-radio nzValue="page">Page Range</label>
+          </nz-radio-group>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Source driver select -->
+    <div class="form-section">
+      <nz-form-item>
+        <nz-form-label nzRequired>Source Driver</nz-form-label>
+        <nz-form-control nzErrorTip="Please select a source driver">
+          <nz-select
+            formControlName="source_driver"
+            nzPlaceHolder="Select crawler driver"
+            [nzLoading]="driversLoading()"
+            nzAllowClear
+          >
+            @for (driver of drivers(); track driver) {
+              <nz-option [nzValue]="driver" [nzLabel]="driver" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- URL mode: single manga URL -->
+    @if (currentMode === 'url') {
+      <div class="form-section">
+        <nz-form-item>
+          <nz-form-label nzRequired>Manga URL</nz-form-label>
+          <nz-form-control nzErrorTip="Please enter the manga URL">
+            <input
+              nz-input
+              formControlName="manga_url"
+              placeholder="https://example.com/manga/title"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    }
+
+    <!-- Page range mode -->
+    @if (currentMode === 'page') {
+      <div class="form-section">
+        <div nz-row [nzGutter]="16">
+          <div nz-col [nzSpan]="12">
+            <nz-form-item>
+              <nz-form-label nzRequired>Start Page</nz-form-label>
+              <nz-form-control nzErrorTip="Required">
+                <nz-input-number
+                  formControlName="start_page"
+                  [nzMin]="1"
+                  [nzStep]="1"
+                  style="width: 100%"
+                />
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+          <div nz-col [nzSpan]="12">
+            <nz-form-item>
+              <nz-form-label nzRequired>End Page</nz-form-label>
+              <nz-form-control nzErrorTip="Required">
+                <nz-input-number
+                  formControlName="end_page"
+                  [nzMin]="1"
+                  [nzStep]="1"
+                  style="width: 100%"
+                />
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Storage type -->
+    <div class="form-section">
+      <nz-form-item>
+        <nz-form-label nzRequired>Storage Type</nz-form-label>
+        <nz-form-control nzErrorTip="Please select storage type">
+          <nz-select formControlName="storage_type" nzPlaceHolder="Select storage">
+            @for (opt of storageOptions; track opt.value) {
+              <nz-option [nzValue]="opt.value" [nzLabel]="opt.label" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Image Options (collapsible) -->
+    <div class="form-section">
+      <nz-collapse>
+        <nz-collapse-panel nzHeader="Image Options" [nzActive]="false">
+
+          <!-- Resize -->
+          <nz-form-item>
+            <nz-form-control>
+              <label nz-checkbox formControlName="resize">Resize images</label>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label>Resize Width (px)</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                formControlName="resize_width"
+                [nzMin]="100"
+                [nzMax]="4000"
+                [nzStep]="50"
+                style="width: 160px"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-divider nzDashed />
+
+          <!-- Compress -->
+          <nz-form-item>
+            <nz-form-control>
+              <label nz-checkbox formControlName="compress">Compress images</label>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label>Compress Quality (1–100)</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                formControlName="compress_quality"
+                [nzMin]="1"
+                [nzMax]="100"
+                [nzStep]="5"
+                style="width: 160px"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-divider nzDashed />
+
+          <!-- Watermark -->
+          <nz-form-item>
+            <nz-form-control>
+              <label nz-checkbox formControlName="watermark">Add watermark</label>
+            </nz-form-control>
+          </nz-form-item>
+
+          <!-- Credit banner -->
+          <nz-form-item>
+            <nz-form-control>
+              <label nz-checkbox formControlName="credit">Add credit banner</label>
+            </nz-form-control>
+          </nz-form-item>
+
+        </nz-collapse-panel>
+      </nz-collapse>
+    </div>
+
+    <!-- Use proxies -->
+    <div class="form-section">
+      <nz-form-item>
+        <nz-form-control>
+          <label nz-checkbox formControlName="use_proxies">Use proxies for this crawl</label>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Submit button -->
+    <div class="form-section">
+      <button
+        nz-button
+        nzType="primary"
+        [nzLoading]="submitting()"
+        [disabled]="submitting()"
+        type="submit"
+      >
+        <nz-icon nzType="play-circle" />
+        Start Crawl
+      </button>
+    </div>
+
+  </form>
+
+  <!-- Active job status display -->
+  @if (activeJob(); as job) {
+    <nz-card class="job-status-card" nzTitle="Active Job">
+      <div class="job-detail">
+
+        <!-- Status -->
+        <div class="detail-item">
+          <label>Status</label>
+          <nz-tag [nzColor]="statusColorMap[job.status]">
+            {{ job.status | uppercase }}
+          </nz-tag>
+        </div>
+
+        <!-- Manga name -->
+        @if (job.manga_name) {
+          <div class="detail-item">
+            <label>Manga</label>
+            <span>{{ job.manga_name }}</span>
+          </div>
+        }
+
+        <!-- Driver -->
+        <div class="detail-item">
+          <label>Driver</label>
+          <span>{{ job.source_driver }}</span>
+        </div>
+
+        <!-- Progress -->
+        <div class="detail-item">
+          <label>Chapters</label>
+          <span>{{ job.crawled_chapters }} / {{ job.total_chapters > 0 ? job.total_chapters : '?' }}</span>
+        </div>
+
+        <!-- Images -->
+        @if (job.total_images > 0) {
+          <div class="detail-item">
+            <label>Images</label>
+            <span>{{ job.total_images }}</span>
+          </div>
+        }
+
+        <!-- Duration -->
+        <div class="detail-item">
+          <label>Duration</label>
+          <span>{{ formatDuration(job.duration_seconds) }}</span>
+        </div>
+
+        <!-- Storage -->
+        <div class="detail-item">
+          <label>Storage</label>
+          <span>{{ job.storage_type }}</span>
+        </div>
+
+      </div>
+
+      <!-- Error message -->
+      @if (job.error_message && (job.status === 'failed' || job.status === 'partial')) {
+        <div style="margin-top: 16px">
+          <nz-alert
+            nzType="error"
+            [nzMessage]="job.error_message"
+            nzShowIcon
+          />
+        </div>
+      }
+
+      <!-- Running spinner -->
+      @if (job.status === 'running' || job.status === 'pending') {
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 8px">
+          <nz-spin nzSimple [nzSize]="'small'" />
+          <span style="opacity: 0.65; font-size: 13px">Polling every 5 seconds...</span>
+        </div>
+      }
+    </nz-card>
+  }
+
+</nz-card>
